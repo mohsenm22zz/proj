@@ -1,0 +1,21 @@
+﻿<UserControl x:Class="wpfUI.ComponentControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="40" d:DesignWidth="100"
+             Cursor="SizeAll">
+    <Grid>
+        <Rectangle Stroke="#999999" Fill="#444444" StrokeThickness="1" RadiusX="2" RadiusY="2"/>
+
+        <TextBlock x:Name="ComponentNameLabel" Text="R1" Foreground="White" 
+                   HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12"/>
+
+        <Rectangle x:Name="LeftConnector" Fill="#CCCCCC" Width="8" Height="8" 
+                   HorizontalAlignment="Left" VerticalAlignment="Center" Margin="-4,0,0,0"/>
+
+        <Rectangle x:Name="RightConnector" Fill="#CCCCCC" Width="8" Height="8" 
+                   HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,-4,0"/>
+    </Grid>
+</UserControl>

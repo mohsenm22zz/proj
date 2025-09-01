@@ -1,0 +1,27 @@
+﻿<Window x:Class="wpfUI.NetlistWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:wpfUI"
+        mc:Ignorable="d"
+        Title="Generated Netlist" Height="450" Width="400"
+        WindowStartupLocation="CenterOwner"
+        Background="#2D2D2D" Foreground="WhiteSmoke">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <TextBox x:Name="NetlistTextBox" Grid.Row="0" IsReadOnly="True" 
+                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                 FontFamily="Consolas" TextWrapping="NoWrap"
+                 Background="#1E1E1E" Foreground="WhiteSmoke" BorderBrush="#4F4F4F"/>
+        
+        <Button Grid.Row="1" Content="OK" Width="75" Height="25" 
+                HorizontalAlignment="Right" Margin="0,10,0,0"
+                Click="OkButton_Click"
+                Background="#3E3E3E" BorderBrush="#4F4F4F"/>
+    </Grid>
+</Window>
