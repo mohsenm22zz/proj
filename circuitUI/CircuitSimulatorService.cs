@@ -9,6 +9,13 @@ namespace wpfUI
     {
         private const string DllName = "CircuitSimulator.dll";
 
+        static CircuitSimulatorService()
+        {
+            string dllPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DllName);
+            Console.WriteLine($"Looking for CircuitSimulator.dll at: {dllPath}");
+            Console.WriteLine($"File exists: {System.IO.File.Exists(dllPath)}");
+        }
+
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr CreateCircuit();
 

@@ -7,14 +7,22 @@ project(CircuitSimulator VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Add DLL export definition
+add_definitions(-DCIRCUITSIMULATOR_EXPORTS)
+
 # Set the output directory for the DLL
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+# Include directories
+include_directories(include)
+
+# Copy to C# project directory after build
+
+# Copy DLL to both Debug and Release C# output directories after build
 add_custom_command(TARGET CircuitSimulator POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        $<TARGET_FILE:CircuitSimulator>
-        ${CMAKE_SOURCE_DIR}/build/$<CONFIG>/CircuitSimulator.dll
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:CircuitSimulator> ${CMAKE_SOURCE_DIR}/circuitUI/bin/Debug/net9.0-windows/CircuitSimulator.dll
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:CircuitSimulator> ${CMAKE_SOURCE_DIR}/circuitUI/bin/Release/net9.0-windows/CircuitSimulator.dll
 )
 
 # Add include directories

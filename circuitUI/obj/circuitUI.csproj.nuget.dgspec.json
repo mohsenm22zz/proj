@@ -46,7 +46,7 @@
           "dependencies": {
             "ScottPlot.WPF": {
               "target": "Package",
-              "version": "[5.0.21, )"
+              "version": "[5.0.56, )"
             }
           },
           "imports": [

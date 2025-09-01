@@ -9,14 +9,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="ScottPlot.WPF" Version="5.0.21" />
+      <PackageReference Include="ScottPlot.WPF" Version="5.0.56" />
     </ItemGroup>
 
     <!-- Copy the native C++ DLL after every build -->
     <Target Name="CopyCppDll" AfterTargets="Build">
-        <Copy SourceFiles="$(ProjectDir)CircuitSimulator.dll"
-              DestinationFolder="$(TargetDir)"
-              SkipUnchangedFiles="true" />
+        <Copy SourceFiles="$(ProjectDir)bin\Debug\net9.0-windows\CircuitSimulator.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" Condition="Exists('$(ProjectDir)bin\Debug\net9.0-windows\CircuitSimulator.dll')" />
+        <Message Text="Copying DLL from: $(ProjectDir)bin\Debug\net9.0-windows\CircuitSimulator.dll to $(TargetDir)" Importance="high" />
     </Target>
 
 </Project>
