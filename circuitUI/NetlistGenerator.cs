@@ -24,7 +24,7 @@ namespace wpfUI
             
             // This method now correctly identifies all electrically connected points as single nodes.
             var nodeMap = CreateIntelligentNodeMap(canvas);
-
+            
             // Find the name of the node cluster that contains the ground symbol.
             string groundClusterName = FindGroundClusterName(canvas, nodeMap);
 
@@ -90,9 +90,7 @@ namespace wpfUI
             return Tuple.Create(commands, nodeMap);
         }
 
-        /// <summary>
-        /// Finds the cluster name (e.g., "N1") that is associated with an explicit ground symbol.
-        /// </summary>
+       
         private static string FindGroundClusterName(Canvas canvas, Dictionary<Point, string> nodeMap)
         {
             foreach (var node in canvas.Children.OfType<NodeControl>())
@@ -108,17 +106,12 @@ namespace wpfUI
             }
             return null; // No ground symbol found
         }
-        
-        /// <summary>
-        /// Traverses the wires to find all electrically connected points and group them into nodes.
-        /// </summary>
         private static Dictionary<Point, string> CreateIntelligentNodeMap(Canvas canvas)
         {
             var allPoints = new HashSet<Point>();
             var adjacency = new Dictionary<Point, List<Point>>();
-
-            // 1. Gather all unique connection points from components and nodes.
-            foreach (var child in canvas.Children)
+            var allWires = canvas.Children.OfType<Wire>().ToList();
+           foreach (var child in canvas.Children)
             {
                 if (child is ComponentControl component)
                 {
@@ -134,30 +127,63 @@ namespace wpfUI
                 }
             }
 
-            // 2. Build an adjacency list representing wire connections.
+            // 2. Find wire intersections and add them as connection points
+            var wireIntersections = new HashSet<Point>();
+            for (int i = 0; i < allWires.Count; i++)
+            {
+                for (int j = i + 1; j < allWires.Count; j++)
+                {
+                    Wire wire1 = allWires[i];
+                    Wire wire2 = allWires[j];
+
+                    if (WireIntersectionHelper.LinesIntersect(wire1.StartPoint, wire1.EndPoint, 
+                                                            wire2.StartPoint, wire2.EndPoint, 
+                                                            out Point intersection))
+                    {
+                        wireIntersections.Add(intersection);
+                        allPoints.Add(intersection);
+                    }
+                }
+            }
+
+            // 3. Build an adjacency list representing wire connections.
             foreach (var point in allPoints)
             {
                 adjacency[point] = new List<Point>();
             }
 
-            foreach (var wire in canvas.Children.OfType<Wire>())
+            foreach (var wire in allWires)
             {
-                // A wire connects its start and end points.
-                var start = wire.StartPoint;
-                var end = wire.EndPoint;
-
-                // We need to find the actual component/node connection points that this wire touches.
-                Point? actualStart = allPoints.FirstOrDefault(p => (p - start).Length < 0.1);
-                Point? actualEnd = allPoints.FirstOrDefault(p => (p - end).Length < 0.1);
-
-                if (actualStart.HasValue && actualEnd.HasValue)
+                var wirePoints = new List<Point> { wire.StartPoint, wire.EndPoint };
+                
+                // Add intersections that lie on this wire
+                foreach (var intersection in wireIntersections)
                 {
-                    adjacency[actualStart.Value].Add(actualEnd.Value);
-                    adjacency[actualEnd.Value].Add(actualStart.Value);
+                    if (WireIntersectionHelper.IsPointOnLineSegment(wire.StartPoint, wire.EndPoint, intersection))
+                    {
+                        wirePoints.Add(intersection);
+                    }
+                }
+
+                // Connect each point on the wire to its nearest connection points
+                foreach (var point in wirePoints)
+                {
+                    Point? actualPoint = allPoints.FirstOrDefault(p => (p - point).Length < 0.1);
+                    if (actualPoint.HasValue)
+                    {
+                        foreach (var otherPoint in wirePoints)
+                        {
+                            Point? actualOtherPoint = allPoints.FirstOrDefault(p => (p - otherPoint).Length < 0.1);
+                            if (actualOtherPoint.HasValue && !actualPoint.Value.Equals(actualOtherPoint.Value))
+                            {
+                                adjacency[actualPoint.Value].Add(actualOtherPoint.Value);
+                            }
+                        }
+                    }
                 }
             }
             
-            // 3. Perform graph traversal (BFS) to find connected components (nodes)
+            // 4. Perform graph traversal (BFS) to find connected components (nodes)
             var nodeMap = new Dictionary<Point, string>();
             var visited = new HashSet<Point>();
             int nodeCounter = 1;

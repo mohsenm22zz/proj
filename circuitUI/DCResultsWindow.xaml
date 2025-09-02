@@ -1,16 +1,21 @@
 ﻿<Window x:Class="wpfUI.DCResultsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="DC Operating Point Results" Height="300" Width="400"
-        Background="#F0F0F0" WindowStartupLocation="CenterOwner">
+        Title="DC Analysis Results" Height="450" Width="400"
+        WindowStartupLocation="CenterOwner"
+        Background="#2D2D2D" Foreground="WhiteSmoke">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-
-        <ListBox x:Name="ResultsListBox" Grid.Row="0" Margin="0,0,0,10"/>
-
-        <Button Grid.Row="1" Content="OK" Width="75" HorizontalAlignment="Right" IsDefault="True" Click="OkButton_Click"/>
+        <TextBox x:Name="ResultsTextBox" Grid.Row="0" IsReadOnly="True" 
+                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                 FontFamily="Consolas" TextWrapping="NoWrap"
+                 Background="#1E1E1E" Foreground="WhiteSmoke" BorderBrush="#4F4F4F"/>
+        <Button Grid.Row="1" Content="OK" Width="75" Height="25" 
+                HorizontalAlignment="Right" Margin="0,10,0,0"
+                Click="OkButton_Click"
+                Background="#3E3E3E" BorderBrush="#4F4F4F"/>
     </Grid>
 </Window>
