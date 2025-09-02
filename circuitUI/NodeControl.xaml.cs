@@ -33,7 +33,7 @@ namespace wpfUI
         {
             if (IsGround)
             {
-                NodeRectangle.Fill = Brushes.Blue;
+                NodeRectangle.Fill = Brushes.Gray;
             }
             else
             {

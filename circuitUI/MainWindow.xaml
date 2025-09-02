@@ -1,5 +1,4 @@
-﻿
-<Window x:Class="wpfUI.MainWindow"
+﻿<Window x:Class="wpfUI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -66,10 +65,7 @@
                     <Button Content="Current Source" Margin="0,0,0,5" Click="AddComponent_Click" Tag="I"/>
                 </StackPanel>
             </Border>
-
-            <!-- Circuit Drawing Area -->
             <Canvas x:Name="SchematicCanvas" Grid.Column="1" Background="#252526" ClipToBounds="True">
-                <!-- Components will be added here dynamically -->
             </Canvas>
         </Grid>
     </Grid>

@@ -25,8 +25,15 @@ namespace wpfUI
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         private static extern void AddNode(IntPtr circuit, string name);
 
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        private static extern void AddResistor(IntPtr circuit, string name, string node1, string node2, double value);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    private static extern void AddResistor(IntPtr circuit, string name, string node1, string node2, double value);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    private static extern void AddCapacitor(IntPtr circuit, string name, string node1, string node2, double value);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    private static extern void AddInductor(IntPtr circuit, string name, string node1, string node2, double value);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         private static extern void AddVoltageSource(IntPtr circuit, string name, string node1, string node2, double voltage);
@@ -85,7 +92,9 @@ namespace wpfUI
         }
         
         public void AddNode(string name) => AddNode(circuitHandle, name);
-        public void AddResistor(string name, string node1, string node2, double value) => AddResistor(circuitHandle, name, node1, node2, value);
+    public void AddResistor(string name, string node1, string node2, double value) => AddResistor(circuitHandle, name, node1, node2, value);
+    public void AddCapacitor(string name, string node1, string node2, double value) => AddCapacitor(circuitHandle, name, node1, node2, value);
+    public void AddInductor(string name, string node1, string node2, double value) => AddInductor(circuitHandle, name, node1, node2, value);
         public void AddVoltageSource(string name, string node1, string node2, double voltage) => AddVoltageSource(circuitHandle, name, node1, node2, voltage);
         public void AddACVoltageSource(string name, string node1, string node2, double magnitude, double phase) => AddACVoltageSource(circuitHandle, name, node1, node2, magnitude, phase);
         public void SetGroundNode(string nodeName) => SetGroundNode(circuitHandle, nodeName);

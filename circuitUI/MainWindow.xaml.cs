@@ -34,7 +34,7 @@ namespace wpfUI
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             DrawGrid();
-            LoadDefaultCircuit(); // Load the default circuit on startup
+           LoadDefaultCircuit(); // Load the default circuit on startup
         }
 
         /// <summary>
@@ -386,6 +386,10 @@ namespace wpfUI
             netlistWindow.Owner = this;
             netlistWindow.ShowDialog();
 
+
+            /// ok
+            OkDialog.Show("Test OK di9");
+
             using (var simulator = new CircuitSimulatorService())
             {
                 try
@@ -396,96 +400,147 @@ namespace wpfUI
                         string type = parts[0];
                         if (type == "GND")
                         {
-                            simulator.SetGroundNode(parts[1]);
-                        }
-                        else if (type == "R" || type == "C" || type == "L") // Added C and L
-                        {
-                            // Assuming a generic AddComponent method exists or is added
-                            // For now, we only have AddResistor, so we'll adapt
-                            simulator.AddResistor(parts[1], parts[2], parts[3], double.Parse(parts[4]));
-                        }
-                        else if (type == "V")
-                        {
-                            simulator.AddVoltageSource(parts[1], parts[2], parts[3], double.Parse(parts[4]));
-                        }
-                        else if (type == "ACV")
-                        {
-                            simulator.AddACVoltageSource(parts[1], parts[2], parts[3], double.Parse(parts[4]), double.Parse(parts[5]));
-                        }
-                    }
-
-                    bool success = false;
-                    var plotWindow = new PlotWindow { Owner = this };
-                    string[] itemsToPlot = _probedItems.Any() ? _probedItems.ToArray() : simulator.GetNodeNames();
-                    string acSource = netlistCommands.FirstOrDefault(c => c.StartsWith("ACV"))?.Split(' ')[1] ?? "";
-
-                    switch (_simulationParameters.CurrentAnalysis)
-                    {
-                        case SimulationParameters.AnalysisType.DCOperatingPoint:
-                            success = simulator.RunDCAnalysis();
-                            if(success)
+                            try
                             {
-                                var dcResultsDict = simulator.GetAllDCResults();
-                                var resultsList = new List<string>();
-                                foreach (var kvp in dcResultsDict)
+                                simulator.SetGroundNode(parts[1]);
+                            }
+                            catch (Exception ex)
+                            {
+                                OkDialog.Show("ground");
+                            }
+                        }
+                        else if (type[0] == 'R') // Added C and L
+                        {// name, n1, n2, value
+                            try
+                            {
+                                simulator.AddResistor(parts[1], parts[2], parts[3], double.Parse(parts[4]));
+                            }
+                            catch (Exception ex)
+                            {
+                                OkDialog.Show("resistor");
+                            }
+                        }
+                        else if (type[0] == 'C')
+                        {
+                            try
+                            {
+                                simulator.AddCapacitor(parts[1], parts[2], parts[3], double.Parse(parts[4]));
+                            }
+                            catch (Exception ex)
+                            {
+                                OkDialog.Show("capacitor");
+                            }
+                        }
+                        else if (type[0] == 'L')
+                        {
+                            try
+                            {
+                                simulator.AddInductor(parts[1], parts[2], parts[3], double.Parse(parts[4]));
+                            }
+                            catch (Exception ex)
+                            {
+                                OkDialog.Show("inductor");
+                            }
+                        }
+                        else if (type[0] == 'V')
+                        {
+                            try
+                            {
+                                simulator.AddVoltageSource(parts[1], parts[2], parts[3], double.Parse(parts[4]));
+                            }
+                            catch (Exception ex)
+                            {
+                                OkDialog.Show("voltage");
+                            }
+                        }
+                        else if (type[0] == 'A')
+                        {
+                            try
+                            {
+                                simulator.AddACVoltageSource(parts[1], parts[2], parts[3], double.Parse(parts[4]), double.Parse(parts[5]));
+                            }
+                            catch (Exception ex)
+                            {
+                                OkDialog.Show("AC voltage");
+                            }
+                        }
+
+                        // test okdialog box here
+                        OkDialog.Show("Test OK dialog at line 429");
+
+                        bool success = false;
+                        var plotWindow = new PlotWindow { Owner = this };
+                        string[] itemsToPlot = _probedItems.Any() ? _probedItems.ToArray() : simulator.GetNodeNames();
+                        string acSource = netlistCommands.FirstOrDefault(c => c.StartsWith("ACV"))?.Split(' ')[1] ?? "";
+
+                        switch (_simulationParameters.CurrentAnalysis)
+                        {
+                            case SimulationParameters.AnalysisType.DCOperatingPoint:
+                                success = simulator.RunDCAnalysis();
+                                if (success)
                                 {
-                                    resultsList.Add($"{kvp.Key} = {kvp.Value:G4}");
+                                    var dcResultsDict = simulator.GetAllDCResults();
+                                    var resultsList = new List<string>();
+                                    foreach (var kvp in dcResultsDict)
+                                    {
+                                        resultsList.Add($"{kvp.Key} = {kvp.Value:G4}");
+                                    }
+                                    var resultsWindow = new DCResultsWindow(resultsList) { Owner = this };
+                                    resultsWindow.Show();
                                 }
-                                var resultsWindow = new DCResultsWindow(resultsList) { Owner = this };
-                                resultsWindow.Show();
-                            }
-                            break;
+                                break;
 
-                        case SimulationParameters.AnalysisType.Transient:
-                            success = simulator.RunTransientAnalysis(_simulationParameters.MaxTimestep, _simulationParameters.StopTime);
-                             if (success)
-                            {
-                                plotWindow.LoadTransientData(simulator, itemsToPlot);
-                                plotWindow.Show();
-                            }
-                            break;
-
-                        case SimulationParameters.AnalysisType.ACSweep:
-                            if (string.IsNullOrEmpty(acSource))
-                            {
-                                MessageBox.Show("AC Sweep requires an ACV component in the circuit.", "Simulation Error");
-                                return;
-                            }
-                            success = simulator.RunACAnalysis(acSource, _simulationParameters.StartFrequency, _simulationParameters.StopFrequency, _simulationParameters.NumberOfPoints, _simulationParameters.SweepType);
-                            if (success)
-                            {
-                                plotWindow.LoadACData(simulator, itemsToPlot);
-                                plotWindow.Show();
-                            }
-                            break;
-                            
-                        case SimulationParameters.AnalysisType.PhaseSweep:
-                            string phaseSource = netlistCommands.FirstOrDefault(c => c.StartsWith("ACV"))?.Split(' ')[1] ?? "";
-                            if (string.IsNullOrEmpty(phaseSource))
-                            {
-                                MessageBox.Show("Phase Sweep requires an ACV component in the circuit.", "Simulation Error");
-                                return;
-                            }
-                            // Fix: RunPhaseSweepAnalysis returns an int, not a bool
-                            int result = simulator.RunPhaseSweepAnalysis(phaseSource, _simulationParameters.BaseFrequency, _simulationParameters.StartPhase, _simulationParameters.StopPhase, _simulationParameters.NumberOfPoints);
-                            success = result > 0; // Consider success if result > 0
-                            if (success)
-                            {
-                                itemsToPlot = _probedItems.Any() ? _probedItems.Where(p => !p.StartsWith("I(")).ToArray() : simulator.GetNodeNames();
-                                if (!itemsToPlot.Any())
+                            case SimulationParameters.AnalysisType.Transient:
+                                success = simulator.RunTransientAnalysis(_simulationParameters.MaxTimestep, _simulationParameters.StopTime);
+                                if (success)
                                 {
-                                     MessageBox.Show("Please probe at least one node to plot for Phase analysis.", "Plot Error");
-                                     return;
+                                    plotWindow.LoadTransientData(simulator, itemsToPlot);
+                                    plotWindow.Show();
                                 }
-                                plotWindow.LoadPhaseData(simulator, itemsToPlot);
-                                plotWindow.Show();
-                            }
-                            break;
-                    }
+                                break;
 
-                    if (!success)
-                    {
-                        MessageBox.Show("The simulation failed to run.", "Simulation Error");
+                            case SimulationParameters.AnalysisType.ACSweep:
+                                if (string.IsNullOrEmpty(acSource))
+                                {
+                                    MessageBox.Show("AC Sweep requires an ACV component in the circuit.", "Simulation Error");
+                                    return;
+                                }
+                                success = simulator.RunACAnalysis(acSource, _simulationParameters.StartFrequency, _simulationParameters.StopFrequency, _simulationParameters.NumberOfPoints, _simulationParameters.SweepType);
+                                if (success)
+                                {
+                                    plotWindow.LoadACData(simulator, itemsToPlot);
+                                    plotWindow.Show();
+                                }
+                                break;
+
+                            case SimulationParameters.AnalysisType.PhaseSweep:
+                                string phaseSource = netlistCommands.FirstOrDefault(c => c.StartsWith("ACV"))?.Split(' ')[1] ?? "";
+                                if (string.IsNullOrEmpty(phaseSource))
+                                {
+                                    MessageBox.Show("Phase Sweep requires an ACV component in the circuit.", "Simulation Error");
+                                    return;
+                                }
+                                // Fix: RunPhaseSweepAnalysis returns an int, not a bool
+                                int result = simulator.RunPhaseSweepAnalysis(phaseSource, _simulationParameters.BaseFrequency, _simulationParameters.StartPhase, _simulationParameters.StopPhase, _simulationParameters.NumberOfPoints);
+                                success = result > 0; // Consider success if result > 0
+                                if (success)
+                                {
+                                    itemsToPlot = _probedItems.Any() ? _probedItems.Where(p => !p.StartsWith("I(")).ToArray() : simulator.GetNodeNames();
+                                    if (!itemsToPlot.Any())
+                                    {
+                                        MessageBox.Show("Please probe at least one node to plot for Phase analysis.", "Plot Error");
+                                        return;
+                                    }
+                                    plotWindow.LoadPhaseData(simulator, itemsToPlot);
+                                    plotWindow.Show();
+                                }
+                                break;
+                        }
+
+                        if (!success)
+                        {
+                            MessageBox.Show("The simulation failed to run.", "Simulation Error");
+                        }
                     }
                 }
                 catch (Exception ex)
