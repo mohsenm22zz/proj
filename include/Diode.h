@@ -31,9 +31,9 @@ public:
     void setBranchIndex(int index);
     int getBranchIndex() const;
 
-    double getCurrent() override;
+    double getCurrent()  override;
     void setCurrent(double c);
-    double getVoltage() override;
+    double getVoltage()  override;
 
 
 private:

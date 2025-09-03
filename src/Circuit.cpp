@@ -1,3 +1,5 @@
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include "Circuit.h"
 #include <algorithm>
 #include <vector>
@@ -67,6 +69,11 @@ CurrentSource *Circuit::findCurrentSource(const string &find_from_name) {
 
 VoltageSource *Circuit::findVoltageSource(const string &find_from_name) {
     for (auto &vs: voltageSources) { if (vs.name == find_from_name) return &vs; }
+    return nullptr;
+}
+
+ACVoltageSource *Circuit::findACVoltageSource(const string &find_from_name) {
+    for (auto &vs: acVoltageSources) { if (vs.name == find_from_name) return &vs; }
     return nullptr;
 }
 

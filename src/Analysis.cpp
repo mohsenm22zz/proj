@@ -12,6 +12,7 @@ using namespace std;
 
 void result_from_vec(Circuit& circuit, const vector<double>& solvedVoltages, const vector<Node*>& nonGroundNodes);
 
+
 bool dcAnalysis(Circuit& circuit) {
     try {
         cout << "// Performing DC Analysis..." << endl;
@@ -50,12 +51,21 @@ bool dcAnalysis(Circuit& circuit) {
                 return false;
             }
 
+            for (auto it = circuit.MNA_A.begin(); it != circuit.MNA_A.end(); ++it)
+            {
+                for (auto jt = it->begin(); jt != it->end(); ++jt)
+                {
+                    cout << *jt << " ";
+                }
+                cout << endl;
+            }
+            
             // Solve the system
             vector<double> solved_solution = gaussianElimination(circuit.MNA_A, circuit.MNA_RHS);
             result_from_vec(circuit, solved_solution, nonGroundNodes);
 
             // Check if any diode has changed its state
-            for (size_t i = 0; i < circuit.diodes.size(); ++i) {
+            for (int i = 0; i < circuit.diodes.size(); ++i) {
                 Diode& current_diode = circuit.diodes[i];
                 DiodeState old_state = previous_diode_states[i];
                 DiodeState new_state = old_state;
@@ -176,7 +186,7 @@ int acSweepAnalysis(Circuit& circuit, const std::string& sourceName, double star
 
             vector<complex<double>> solution = gaussianElimination(circuit.MNA_A_Complex, circuit.MNA_RHS_Complex);
 
-            for (size_t j = 0; j < nonGroundNodes.size(); ++j) {
+            for (int j = 0; j < nonGroundNodes.size(); ++j) {
                 if(j < solution.size()) {
                     nonGroundNodes[j]->ac_sweep_history.push_back({current_freq, abs(solution[j])});
                 }
@@ -218,7 +228,7 @@ int phaseSweepAnalysis(Circuit& circuit, const std::string& sourceName, double b
 
             vector<complex<double>> solution = gaussianElimination(circuit.MNA_A_Complex, circuit.MNA_RHS_Complex);
 
-            for (size_t j = 0; j < nonGroundNodes.size(); ++j) {
+            for (int j = 0; j < nonGroundNodes.size(); ++j) {
                  if(j < solution.size()) {
                     nonGroundNodes[j]->phase_sweep_history.push_back({current_phase, abs(solution[j])});
                 }
@@ -242,20 +252,20 @@ void result_from_vec(Circuit& circuit, const vector<double>& solvedVoltages, con
     if (solvedVoltages.size() < nonGroundNodes.size()) {
         throw std::runtime_error("Solution vector size is smaller than the number of non-ground nodes.");
     }
-    for (size_t i = 0; i < nonGroundNodes.size(); ++i) {
+    for (int i = 0; i < nonGroundNodes.size(); ++i) {
         nonGroundNodes[i]->setVoltage(solvedVoltages[i]);
     }
 
     int current_idx_offset = nonGroundNodes.size();
 
-    for(size_t i = 0; i < circuit.voltageSources.size(); ++i) {
+    for(int i = 0; i < circuit.voltageSources.size(); ++i) {
         if (current_idx_offset + i < solvedVoltages.size()) {
             circuit.voltageSources[i].setCurrent(solvedVoltages[current_idx_offset + i]);
         }
     }
     current_idx_offset += circuit.voltageSources.size();
 
-    for(size_t i = 0; i < circuit.inductors.size(); ++i) {
+    for(int i = 0; i < circuit.inductors.size(); ++i) {
         if (current_idx_offset + i < solvedVoltages.size()) {
             circuit.inductors[i].setInductorCurrent(solvedVoltages[current_idx_offset + i]);
         }
@@ -265,7 +275,7 @@ void result_from_vec(Circuit& circuit, const vector<double>& solvedVoltages, con
     for (auto& diode : circuit.diodes) {
         if (diode.getState() != STATE_OFF) {
             int idx = diode.getBranchIndex();
-             if (idx != -1 && static_cast<size_t>(idx) < solvedVoltages.size()) {
+             if (idx != -1 && static_cast<int>(idx) < solvedVoltages.size()) {
                 diode.setCurrent(solvedVoltages[idx]);
             }
         } else {

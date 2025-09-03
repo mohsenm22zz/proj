@@ -31,6 +31,12 @@ enum class AnalysisType {
 
 class Circuit {
 public:
+
+    // === ADDED ===
+    Circuit();                 // <-- declare ctor (defined in Circuit.cpp)
+    ~Circuit();                // <-- declare dtor (defined in Circuit.cpp)
+
+
     vector<Node*> nodes;
     vector<Resistor> resistors;
     vector<Capacitor> capacitors;
@@ -49,6 +55,10 @@ public:
     vector<vector<complex<double>>> MNA_A_Complex;
     vector<complex<double>> MNA_RHS_Complex;
     
+    // === ADDED ===
+    vector<double> MNA_solution;   // <-- used by Circuit.cpp (MNA_sol_size / resize)
+
+
     vector<vector<double>> G();
     vector<vector<double>> B();
     vector<vector<double>> C();
@@ -71,6 +81,19 @@ public:
     bool deleteResistor(const string& name);
     void set_MNA_A(AnalysisType type, double frequency = 0);
     void set_MNA_RHS(AnalysisType type, double frequency = 0);
+
+    // === ADDED (these are called in Circuit.cpp) ===
+    bool deleteCapacitor(const string& name);
+    bool deleteInductor(const string& name);
+    bool deleteDiode(const string& name);
+    bool deleteVoltageSource(const string& name);
+    bool deleteCurrentSource(const string& name);
+
+    // === ADDED (used in Circuit.cpp) ===
+    void MNA_sol_size();                          // <-- resizes MNA_solution
+
+    // === ADDED (used in Circuit.cpp) ===
+    bool isNodeNameGround(const string& node_name) const;
 
     void setDeltaT(double dt);
     void updateComponentStates();

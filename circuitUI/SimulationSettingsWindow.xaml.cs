@@ -11,8 +11,9 @@ namespace wpfUI
         {
             InitializeComponent();
             Parameters = new SimulationParameters();
+            Parameters.CurrentAnalysis = SimulationParameters.AnalysisType.DCOperatingPoint;
         }
-
+        
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {
             try

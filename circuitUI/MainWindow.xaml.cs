@@ -35,21 +35,20 @@ namespace wpfUI
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             DrawGrid();
-            //LoadDefaultCircuit(); //example
+            LoadDefaultCircuit(); //example
         }
         private void LoadDefaultCircuit()
         {
-            var acSource = new ComponentControl
+            var resistor2 = new ComponentControl
             {
-                ComponentName = "ACV1",
+                ComponentName = "R2",
                 Width = 80,
                 Height = 40,
-                Value = 10,
-                AcPhase = 0,
+                Value = 1000,
                 HasBeenPlaced = true
             };
-            Canvas.SetLeft(acSource, 80);
-            Canvas.SetTop(acSource, 140);
+            Canvas.SetLeft(resistor2, 80);
+            Canvas.SetTop(resistor2, 140);
 
             var resistor = new ComponentControl
             {
@@ -62,16 +61,16 @@ namespace wpfUI
             Canvas.SetLeft(resistor, 240);
             Canvas.SetTop(resistor, 140);
 
-            var capacitor = new ComponentControl
+            var voltageSource = new ComponentControl
             {
-                ComponentName = "C1",
+                ComponentName = "V1",
                 Width = 80,
                 Height = 40,
-                Value = 0.000001,
+                Value = 1,
                 HasBeenPlaced = true
             };
-            Canvas.SetLeft(capacitor, 400);
-            Canvas.SetTop(capacitor, 140);
+            Canvas.SetLeft(voltageSource, 400);
+            Canvas.SetTop(voltageSource, 140);
             var groundNode = new NodeControl
             {
                 Width = 10,
@@ -82,9 +81,9 @@ namespace wpfUI
             Canvas.SetLeft(groundNode, 275);
             Canvas.SetTop(groundNode, 235);
 
-            SchematicCanvas.Children.Add(acSource);
+            SchematicCanvas.Children.Add(resistor2);
             SchematicCanvas.Children.Add(resistor);
-            SchematicCanvas.Children.Add(capacitor);
+            SchematicCanvas.Children.Add(voltageSource);
             SchematicCanvas.Children.Add(groundNode);
 
             var wire1 = new Wire { StartPoint = new Point(160, 160) };
@@ -105,9 +104,9 @@ namespace wpfUI
             wire4.AddPoint(new Point(280, 240));
             SchematicCanvas.Children.Add(wire4);
 
-            _componentCounts["ACV"] = 2;
             _componentCounts["R"] = 2;
-            _componentCounts["C"] = 2;
+            _componentCounts["R"] = 2;
+            _componentCounts["V"] = 2;
 
             _isCircuitLocked = true;
         }
@@ -370,7 +369,6 @@ namespace wpfUI
             var netlistWindow = new NetlistWindow(netlistCommands);
             netlistWindow.Owner = this;
             netlistWindow.ShowDialog();
-            OkDialog.Show("hi");
             try
             {
                 using (var simulator = new CircuitSimulatorService())
@@ -414,10 +412,12 @@ namespace wpfUI
                                 MessageBox.Show("DC analysis cannot be run with an AC voltage source in the circuit.", "Simulation Error");
                                 return;
                             }
+                            OkDialog.Show("DC analysis started.");
                             success = simulator.RunDCAnalysis();
                             if (success)
                             {
                                 var dcResultsDict = simulator.GetAllDCResults();
+                                OkDialog.Show("DC analysis completed.");
                                 var nodeVoltages = new List<string>();
                                 var componentCurrents = new List<string>();
                                 foreach (var kvp in dcResultsDict)

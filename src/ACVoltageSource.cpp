@@ -21,3 +21,13 @@ std::complex<double> ACVoltageSource::getPhasor() const {
     double phase_rad = phase * M_PI / 180.0;
     return std::complex<double>(magnitude * cos(phase_rad), magnitude * sin(phase_rad));
 }
+
+
+double ACVoltageSource::getCurrent() {
+    // Voltage sources typically don't have a simple current value
+    return 0.0;  // Placeholder value, depends on how the circuit is modeled
+}
+
+double ACVoltageSource::getVoltage() {
+    return magnitude;  // Return the magnitude as the AC voltage
+}

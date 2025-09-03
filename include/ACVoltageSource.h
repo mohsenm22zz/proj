@@ -19,9 +19,8 @@ public:
     double getValue(double time) const;
     std::complex<double> getPhasor() const;
     
-    // Implement pure virtual functions from Component
-    double getCurrent() override { return 0.0; }  // AC sources don't have a simple current value
-    double getVoltage() override { return magnitude; }  // Return magnitude as voltage
+    double getCurrent() override;  
+    double getVoltage() override;  
 };
 
 #endif

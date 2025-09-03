@@ -17,7 +17,7 @@ public:
 
     double getCurrent() override;
 
-    void setCurrent(double c) override;
+    void setCurrent(double c);
 
     double getVoltage() override;
 

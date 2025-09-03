@@ -17,33 +17,8 @@ void safeStringCopy(char* buffer, int bufferSize, const std::string& source) {
     }
 }
 
-// Helper function to convert std::string to char*
-char* stringToCharPtr(const std::string& str) {
-    char* result = new char[str.length() + 1];
-    std::strcpy(result, str.c_str());
-    return result;
-}
-
 extern "C" {
-
-void RunDCOperatingPoint(void* circuit) {
-    try {
-        if (circuit) {
-            dcAnalysis(*static_cast<Circuit*>(circuit));
-        }
-    } catch (...) {}
-}
-
-int RunACAnalysis(void* circuit, const char* sourceName, double startFreq, double stopFreq, int numPoints, const char* sweepType) {
-    try {
-        if (circuit && sourceName && sweepType) {
-            return acSweepAnalysis(*static_cast<Circuit*>(circuit), sourceName, startFreq, stopFreq, numPoints, sweepType);
-        }
-    } catch (...) {}
-    return 0;
-}
-
-void* CreateCircuit() {
+    Circuit* CreateCircuit() {
         try {
             return new Circuit();
         } catch (...) {
@@ -51,7 +26,7 @@ void* CreateCircuit() {
         }
     }
 
-    void DestroyCircuit(void* circuit) {
+    void DestroyCircuit(Circuit* circuit) {
         try {
             if (circuit) {
                 delete static_cast<Circuit*>(circuit);
@@ -68,7 +43,7 @@ void* CreateCircuit() {
         } catch (...) {}
     }
 
-    void AddResistor(void* circuit, const char* name, const char* node1, const char* node2, double value) {
+    void AddResistor(Circuit* circuit, const char* name, const char* node1, const char* node2, double value) {
         if (!circuit || !name || !node1 || !node2) return;
         try {
             Circuit* c = static_cast<Circuit*>(circuit);
@@ -83,7 +58,7 @@ void* CreateCircuit() {
         } catch (...) {}
     }
 
-    void AddCapacitor(void* circuit, const char* name, const char* node1, const char* node2, double value) {
+    void AddCapacitor(Circuit* circuit, const char* name, const char* node1, const char* node2, double value) {
         if (!circuit || !name || !node1 || !node2) return;
         try {
             Circuit* c = static_cast<Circuit*>(circuit);
@@ -98,7 +73,7 @@ void* CreateCircuit() {
         } catch (...) {}
     }
 
-    void AddInductor(void* circuit, const char* name, const char* node1, const char* node2, double value) {
+    void AddInductor(Circuit* circuit, const char* name, const char* node1, const char* node2, double value) {
         if (!circuit || !name || !node1 || !node2) return;
         try {
             Circuit* c = static_cast<Circuit*>(circuit);
@@ -113,7 +88,7 @@ void* CreateCircuit() {
         } catch (...) {}
     }
 
-    void AddVoltageSource(void* circuit, const char* name, const char* node1, const char* node2, double voltage) {
+    void AddVoltageSource(Circuit* circuit, const char* name, const char* node1, const char* node2, double voltage) {
         if (!circuit || !name || !node1 || !node2) return;
         try {
             Circuit* c = static_cast<Circuit*>(circuit);
@@ -128,7 +103,7 @@ void* CreateCircuit() {
         } catch (...) {}
     }
     
-    void AddACVoltageSource(void* circuit, const char* name, const char* node1, const char* node2, double magnitude, double phase) {
+    void AddACVoltageSource(Circuit* circuit, const char* name, const char* node1, const char* node2, double magnitude, double phase) {
         if (!circuit || !name || !node1 || !node2) return;
         try {
             Circuit* c = static_cast<Circuit*>(circuit);
@@ -144,7 +119,7 @@ void* CreateCircuit() {
         } catch (...) {}
     }
 
-    void SetGroundNode(void* circuit, const char* nodeName) {
+    void SetGroundNode(Circuit* circuit, const char* nodeName) {
         if (!circuit || !nodeName) return;
         try {
             Circuit* c = static_cast<Circuit*>(circuit);
@@ -155,7 +130,7 @@ void* CreateCircuit() {
         } catch (...) {}
     }
 
-    bool RunDCAnalysis(void* circuit) {
+    bool RunDCAnalysis(Circuit* circuit) {
         if (!circuit) return false;
         try {
             dcAnalysis(*static_cast<Circuit*>(circuit));
@@ -169,7 +144,7 @@ void* CreateCircuit() {
         }
     }
 
-    bool RunTransientAnalysis(void* circuit, double stepTime, double stopTime) {
+    bool RunTransientAnalysis(Circuit* circuit, double stepTime, double stopTime) {
         if (!circuit) return false;
         try {
             transientAnalysis(*static_cast<Circuit*>(circuit), stepTime, stopTime);
@@ -183,7 +158,7 @@ void* CreateCircuit() {
         }
     }
 
-    bool RunACAnalysis(void* circuit, const char* sourceName, double startFreq, double stopFreq, int numPoints, const char* sweepType) {
+    bool RunACAnalysis(Circuit* circuit, const char* sourceName, double startFreq, double stopFreq, int numPoints, const char* sweepType) {
         if (!circuit || !sourceName || !sweepType) return false;
         try {
             acSweepAnalysis(*static_cast<Circuit*>(circuit), sourceName, startFreq, stopFreq, numPoints, sweepType);
@@ -197,7 +172,7 @@ void* CreateCircuit() {
         }
     }
 
-    bool RunPhaseSweepAnalysis(void* circuit, const char* sourceName, double baseFreq, double startPhase, double stopPhase, int numPoints) {
+    bool RunPhaseSweepAnalysis(Circuit* circuit, const char* sourceName, double baseFreq, double startPhase, double stopPhase, int numPoints) {
         if (!circuit || !sourceName) return false;
         try {
             phaseSweepAnalysis(*static_cast<Circuit*>(circuit), sourceName, baseFreq, startPhase, stopPhase, numPoints);
@@ -350,90 +325,5 @@ void* CreateCircuit() {
         } catch (...) {
             return 0.0;
         }
-    }
-}
-
-CIRCUITSIMULATOR_API void RunDCOperatingPoint(void* circuit) {
-    try {
-        if (circuit) {
-            dcAnalysis(*static_cast<Circuit*>(circuit));
-        }
-    } catch (...) {}
-}
-
-CIRCUITSIMULATOR_API int RunACAnalysis(void* circuit, const char* sourceName, double startFreq, double stopFreq, int numPoints, const char* sweepType) {
-    try {
-        if (circuit && sourceName && sweepType) {
-            return acSweepAnalysis(*static_cast<Circuit*>(circuit), sourceName, startFreq, stopFreq, numPoints, sweepType);
-        }
-    } catch (...) {}
-    return 0;
-}
-
-CIRCUITSIMULATOR_API int RunPhaseSweep(void* circuit, const char* sourceName, double baseFreq, double startPhase, double stopPhase, int numPoints) {
-    try {
-        if (circuit && sourceName) {
-            return phaseSweepAnalysis(*static_cast<Circuit*>(circuit), sourceName, baseFreq, startPhase, stopPhase, numPoints);
-        }
-    } catch (...) {}
-    return 0;
-}
-
-// Component property accessors with proper type handling
-extern "C" {
-    CIRCUITSIMULATOR_API const char* GetComponentName(void* component) {
-        try {
-            if (component) {
-                Component* comp = static_cast<Component*>(component);
-                return stringToCharPtr(comp->name);
-            }
-        } catch (...) {}
-        return nullptr;
-    }
-
-    CIRCUITSIMULATOR_API double GetComponentResistance(void* component) {
-        try {
-            if (component) {
-                Component* comp = static_cast<Component*>(component);
-                if (comp->getType() == ResistorType) {
-                    Resistor* resistor = static_cast<Resistor*>(component);
-                    return resistor->resistance;
-                }
-            }
-        } catch (...) {}
-        return 0.0;
-    }
-
-    CIRCUITSIMULATOR_API void SetComponentResistance(void* component, double resistance) {
-        try {
-            if (component) {
-                Component* comp = static_cast<Component*>(component);
-                if (comp->getType() == ResistorType) {
-                    Resistor* resistor = static_cast<Resistor*>(component);
-                    resistor->resistance = resistance;
-                }
-            }
-        } catch (...) {}
-    }
-}
-
-// Circuit state management implementations
-extern "C" {
-    CIRCUITSIMULATOR_API void SaveCircuitState(void* circuit, const char* filename) {
-        try {
-            if (circuit && filename) {
-                // Implementation for saving circuit state to file
-                // Example: static_cast<Circuit*>(circuit)->saveToFile(filename);
-            }
-        } catch (...) {}
-    }
-
-    CIRCUITSIMULATOR_API void LoadCircuitState(void* circuit, const char* filename) {
-        try {
-            if (circuit && filename) {
-                // Implementation for loading circuit state from file
-                // Example: static_cast<Circuit*>(circuit)->loadFromFile(filename);
-            }
-        } catch (...) {}
     }
 }
