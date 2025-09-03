@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Numerics;
-using System.Linq;
-using System.Diagnostics;
 
 namespace CircuitSimulator
 {
@@ -13,7 +10,7 @@ namespace CircuitSimulator
             try
             {
                 Console.WriteLine("// Performing DC Analysis...");
-                circuit.SetDeltaT(1e12); // Treat capacitors as open, inductors as short
+                circuit.DeltaT = 1e12; // Treat capacitors as open, inductors as short
                 
                 List<Node> nonGroundNodes = new List<Node>();
                 foreach (Node node in circuit.Nodes)
@@ -133,7 +130,7 @@ namespace CircuitSimulator
                     if (!node.IsGround) node.AddVoltageHistoryPoint(0.0, node.GetVoltage());
                 }
 
-                circuit.SetDeltaT(tStep);
+                circuit.DeltaT = tStep;
 
                 for (double t = tStep; t <= tStop; t += tStep)
                 {

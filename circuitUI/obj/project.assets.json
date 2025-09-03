@@ -1172,11 +1172,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\mzake\\.vscode\\projects\\proj\\circuitUI\\circuitUI.csproj",
+      "projectUniqueName": "C:\\Users\\mzake\\RiderProjects\\proj\\circuitUI\\circuitUI.csproj",
       "projectName": "circuitUI",
-      "projectPath": "C:\\Users\\mzake\\.vscode\\projects\\proj\\circuitUI\\circuitUI.csproj",
+      "projectPath": "C:\\Users\\mzake\\RiderProjects\\proj\\circuitUI\\circuitUI.csproj",
       "packagesPath": "C:\\Users\\mzake\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\mzake\\.vscode\\projects\\proj\\circuitUI\\obj\\",
+      "outputPath": "C:\\Users\\mzake\\RiderProjects\\proj\\circuitUI\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\mzake\\AppData\\Roaming\\NuGet\\NuGet.Config"

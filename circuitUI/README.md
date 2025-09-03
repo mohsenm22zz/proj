@@ -87,4 +87,5 @@ The simulator supports:
 - AC Sweep Analysis
 - Phase Sweep Analysis
 
-dotnet run --project circuitUI/circuitUI.csproj
+cd circuitUI
+dotnet run --project circuitUI.csproj

@@ -4,10 +4,6 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "circuitUI", "circuitUI\circuitUI.csproj", "{EF8C2CE0-7FFA-ECE3-5166-57EB7D24D3A4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UItest", "circuitUI\UItest.csproj", "{5138B9EF-F001-3DEA-F968-543D663B63C6}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wpfUI", "circuitUI\wpfUI.csproj", "{3B2124BC-CBE0-484C-3F89-41AFD5F4FF9A}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,14 +14,6 @@ Global
 		{EF8C2CE0-7FFA-ECE3-5166-57EB7D24D3A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF8C2CE0-7FFA-ECE3-5166-57EB7D24D3A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF8C2CE0-7FFA-ECE3-5166-57EB7D24D3A4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5138B9EF-F001-3DEA-F968-543D663B63C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5138B9EF-F001-3DEA-F968-543D663B63C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5138B9EF-F001-3DEA-F968-543D663B63C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5138B9EF-F001-3DEA-F968-543D663B63C6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3B2124BC-CBE0-484C-3F89-41AFD5F4FF9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3B2124BC-CBE0-484C-3F89-41AFD5F4FF9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3B2124BC-CBE0-484C-3F89-41AFD5F4FF9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3B2124BC-CBE0-484C-3F89-41AFD5F4FF9A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

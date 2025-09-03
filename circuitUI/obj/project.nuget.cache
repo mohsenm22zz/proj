@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "pEKdu1EDZXA=",
+  "dgSpecHash": "JKzlZA+NQd8=",
   "success": true,
-  "projectFilePath": "C:\\Users\\mzake\\.vscode\\projects\\proj\\circuitUI\\circuitUI.csproj",
+  "projectFilePath": "C:\\Users\\mzake\\RiderProjects\\proj\\circuitUI\\circuitUI.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\mzake\\.nuget\\packages\\harfbuzzsharp\\7.3.0.3\\harfbuzzsharp.7.3.0.3.nupkg.sha512",
     "C:\\Users\\mzake\\.nuget\\packages\\harfbuzzsharp.nativeassets.linux\\7.3.0.3\\harfbuzzsharp.nativeassets.linux.7.3.0.3.nupkg.sha512",

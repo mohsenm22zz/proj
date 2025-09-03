@@ -8,14 +8,14 @@ namespace CircuitSimulator
         public double Magnitude { get; set; }
         public double Frequency { get; set; }
         public double Phase { get; set; }
-        public Node Node1 { get; set; }
-        public Node Node2 { get; set; }
+        // Remove the duplicate Node1 and Node2 declarations since they're inherited from Component
 
         public ACVoltageSource()
         {
             Magnitude = 0.0;
             Frequency = 0.0;
             Phase = 0.0;
+            Name = "";
             Node1 = null;
             Node2 = null;
         }

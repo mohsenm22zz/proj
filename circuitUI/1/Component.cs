@@ -5,8 +5,8 @@ namespace CircuitSimulator
     public abstract class Component
     {
         public string Name { get; set; }
-        public Node Node1 { get; set; }
-        public Node Node2 { get; set; }
+        public Node? Node1 { get; set; }
+        public Node? Node2 { get; set; }
 
         protected Component()
         {

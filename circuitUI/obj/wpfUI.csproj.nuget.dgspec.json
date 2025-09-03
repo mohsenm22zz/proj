@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\mzake\\.vscode\\projects\\proj\\circuitUI\\wpfUI.csproj": {}
+    "C:\\Users\\mzake\\RiderProjects\\proj\\circuitUI\\wpfUI.csproj": {}
   },
   "projects": {
-    "C:\\Users\\mzake\\.vscode\\projects\\proj\\circuitUI\\wpfUI.csproj": {
+    "C:\\Users\\mzake\\RiderProjects\\proj\\circuitUI\\wpfUI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\mzake\\.vscode\\projects\\proj\\circuitUI\\wpfUI.csproj",
+        "projectUniqueName": "C:\\Users\\mzake\\RiderProjects\\proj\\circuitUI\\wpfUI.csproj",
         "projectName": "wpfUI",
-        "projectPath": "C:\\Users\\mzake\\.vscode\\projects\\proj\\circuitUI\\wpfUI.csproj",
+        "projectPath": "C:\\Users\\mzake\\RiderProjects\\proj\\circuitUI\\wpfUI.csproj",
         "packagesPath": "C:\\Users\\mzake\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\mzake\\.vscode\\projects\\proj\\circuitUI\\obj\\",
+        "outputPath": "C:\\Users\\mzake\\RiderProjects\\proj\\circuitUI\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\mzake\\AppData\\Roaming\\NuGet\\NuGet.Config"

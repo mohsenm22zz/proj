@@ -1,8 +1,8 @@
-﻿using System.Configuration;
+using System.Configuration;
 using System.Data;
 using System.Windows;
 
-namespace wpfUI
+namespace circuitUI
 {
 
     public partial class App : Application
