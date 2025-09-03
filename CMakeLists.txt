@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Add DLL export definition
-add_definitions(-DCIRCUITSIMULATOR_EXPORTS)
+add_definitions(-DSIMULATOR_EXPORTS)
 
 # Set the output directory for the DLL
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

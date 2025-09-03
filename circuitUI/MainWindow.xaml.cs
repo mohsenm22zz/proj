@@ -446,12 +446,16 @@ namespace wpfUI
                                 MessageBox.Show("AC Sweep requires an ACV component in the circuit.", "Simulation Error");
                                 return;
                             }
-                            success = simulator.RunACAnalysis(acSource, _simulationParameters.StartFrequency, _simulationParameters.StopFrequency, _simulationParameters.NumberOfPoints, _simulationParameters.SweepType);
-                            if (success)
-                            {
+                            var acResult = simulator.RunACAnalysis(acSource, _simulationParameters.StartFrequency, _simulationParameters.StopFrequency, _simulationParameters.NumberOfPoints, _simulationParameters.SweepType);
+                            if (acResult != null && acResult.Item1.Length > 0 && acResult.Item2.Length > 0) {
+                                // Process AC analysis results
                                 var plotWindow = new PlotWindow { Owner = this };
                                 plotWindow.LoadACData(simulator, itemsToPlot);
                                 plotWindow.Show();
+                                success = true;
+                            } else {
+                                // Handle empty or null result case
+                                success = false;
                             }
                             break;
                         case SimulationParameters.AnalysisType.PhaseSweep:

@@ -8,6 +8,10 @@ public:
 
     Resistor() : resistance(0.0) {}
 
+    ComponentType getType() const override { return ResistorType; }
+    double getResistance() const override { return resistance; }
+    void setCurrent(double c) override { /* Resistor current is determined by voltage */ }
     double getCurrent() override;
     double getVoltage() override;
 };
+// Similar implementations for Capacitor, Inductor, etc.

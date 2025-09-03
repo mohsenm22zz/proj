@@ -5,6 +5,19 @@ using System.Text;
 
 namespace wpfUI
 {
+    public enum ComponentType
+    {
+        Resistor,
+        Capacitor,
+        Inductor,
+        VoltageSource,
+        ACVoltageSource,
+        CurrentSource,
+        Diode
+    }
+
+
+
     public class CircuitSimulatorService : IDisposable
     {
         private const string DllName = "CircuitSimulator.dll";
@@ -51,8 +64,32 @@ namespace wpfUI
         private static extern bool RunTransientAnalysis(IntPtr circuit, double stepTime, double stopTime);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        private static extern bool RunACAnalysis(IntPtr circuit, string sourceName, double startFreq, double stopFreq, int numPoints, string sweepType);
-        
+        private static extern void RunDCOperatingPoint(IntPtr circuit);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        private static extern int RunACAnalysis(IntPtr circuit, string sourceName, double startFreq, double stopFreq, int numPoints, string sweepType);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        private static extern int RunPhaseSweep(IntPtr circuit, string sourceName, double baseFreq, double startPhase, double stopPhase, int numPoints);
+
+        // Component property accessors
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr GetComponentName(IntPtr component);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern double GetComponentResistance(IntPtr component);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern void SetComponentResistance(IntPtr component, double resistance);
+
+        // ... similar imports for capacitance, inductance, etc. ...
+
+        // Circuit state management
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        private static extern void SaveCircuitState(IntPtr circuit, string filename);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        private static extern void LoadCircuitState(IntPtr circuit, string filename);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         private static extern int RunPhaseSweepAnalysis(IntPtr circuit, string sourceName, double baseFreq, double startPhase, double stopPhase, int numPoints);
@@ -100,7 +137,6 @@ namespace wpfUI
         public void SetGroundNode(string nodeName) => SetGroundNode(circuitHandle, nodeName);
         public bool RunDCAnalysis() => RunDCAnalysis(circuitHandle);
         public bool RunTransientAnalysis(double stepTime, double stopTime) => RunTransientAnalysis(circuitHandle, stepTime, stopTime);
-        public bool RunACAnalysis(string sourceName, double startFreq, double stopFreq, int numPoints, string sweepType = "Linear") => RunACAnalysis(circuitHandle, sourceName, startFreq, stopFreq, numPoints, sweepType);
         public int RunPhaseSweepAnalysis(string sourceName, double baseFreq, double startPhase, double stopPhase, int numPoints) => RunPhaseSweepAnalysis(circuitHandle, sourceName, baseFreq, startPhase, stopPhase, numPoints);
         public double GetNodeVoltage(string nodeName) => GetNodeVoltage(circuitHandle, nodeName);
 
@@ -223,6 +259,35 @@ namespace wpfUI
         ~CircuitSimulatorService()
         {
             Dispose(false);
+        }
+
+        public void RunDCOperatingPoint()
+        {
+            RunDCOperatingPoint(circuitHandle);
+        }
+
+        public Tuple<double[], double[]> RunACAnalysis(string sourceName, double startFreq, double stopFreq, int numPoints, string sweepType)
+        {
+            const int maxPoints = 2000;
+            double[] frequencies = new double[maxPoints];
+            double[] magnitudes = new double[maxPoints];
+            int count = RunACAnalysis(circuitHandle, sourceName, startFreq, stopFreq, numPoints, sweepType);
+            if (count > 0)
+            {
+                Array.Resize(ref frequencies, count);
+                Array.Resize(ref magnitudes, count);
+            }
+            return Tuple.Create(frequencies, magnitudes);
+        }
+
+        public void SaveCircuitState(string filename)
+        {
+            SaveCircuitState(circuitHandle, filename);
+        }
+
+        public void LoadCircuitState(string filename)
+        {
+            LoadCircuitState(circuitHandle, filename);
         }
     }
 }

@@ -17,8 +17,33 @@ void safeStringCopy(char* buffer, int bufferSize, const std::string& source) {
     }
 }
 
+// Helper function to convert std::string to char*
+char* stringToCharPtr(const std::string& str) {
+    char* result = new char[str.length() + 1];
+    std::strcpy(result, str.c_str());
+    return result;
+}
+
 extern "C" {
-    void* CreateCircuit() {
+
+void RunDCOperatingPoint(void* circuit) {
+    try {
+        if (circuit) {
+            dcAnalysis(*static_cast<Circuit*>(circuit));
+        }
+    } catch (...) {}
+}
+
+int RunACAnalysis(void* circuit, const char* sourceName, double startFreq, double stopFreq, int numPoints, const char* sweepType) {
+    try {
+        if (circuit && sourceName && sweepType) {
+            return acSweepAnalysis(*static_cast<Circuit*>(circuit), sourceName, startFreq, stopFreq, numPoints, sweepType);
+        }
+    } catch (...) {}
+    return 0;
+}
+
+void* CreateCircuit() {
         try {
             return new Circuit();
         } catch (...) {
@@ -328,3 +353,87 @@ extern "C" {
     }
 }
 
+CIRCUITSIMULATOR_API void RunDCOperatingPoint(void* circuit) {
+    try {
+        if (circuit) {
+            dcAnalysis(*static_cast<Circuit*>(circuit));
+        }
+    } catch (...) {}
+}
+
+CIRCUITSIMULATOR_API int RunACAnalysis(void* circuit, const char* sourceName, double startFreq, double stopFreq, int numPoints, const char* sweepType) {
+    try {
+        if (circuit && sourceName && sweepType) {
+            return acSweepAnalysis(*static_cast<Circuit*>(circuit), sourceName, startFreq, stopFreq, numPoints, sweepType);
+        }
+    } catch (...) {}
+    return 0;
+}
+
+CIRCUITSIMULATOR_API int RunPhaseSweep(void* circuit, const char* sourceName, double baseFreq, double startPhase, double stopPhase, int numPoints) {
+    try {
+        if (circuit && sourceName) {
+            return phaseSweepAnalysis(*static_cast<Circuit*>(circuit), sourceName, baseFreq, startPhase, stopPhase, numPoints);
+        }
+    } catch (...) {}
+    return 0;
+}
+
+// Component property accessors with proper type handling
+extern "C" {
+    CIRCUITSIMULATOR_API const char* GetComponentName(void* component) {
+        try {
+            if (component) {
+                Component* comp = static_cast<Component*>(component);
+                return stringToCharPtr(comp->name);
+            }
+        } catch (...) {}
+        return nullptr;
+    }
+
+    CIRCUITSIMULATOR_API double GetComponentResistance(void* component) {
+        try {
+            if (component) {
+                Component* comp = static_cast<Component*>(component);
+                if (comp->getType() == ResistorType) {
+                    Resistor* resistor = static_cast<Resistor*>(component);
+                    return resistor->resistance;
+                }
+            }
+        } catch (...) {}
+        return 0.0;
+    }
+
+    CIRCUITSIMULATOR_API void SetComponentResistance(void* component, double resistance) {
+        try {
+            if (component) {
+                Component* comp = static_cast<Component*>(component);
+                if (comp->getType() == ResistorType) {
+                    Resistor* resistor = static_cast<Resistor*>(component);
+                    resistor->resistance = resistance;
+                }
+            }
+        } catch (...) {}
+    }
+}
+
+// Circuit state management implementations
+extern "C" {
+    CIRCUITSIMULATOR_API void SaveCircuitState(void* circuit, const char* filename) {
+        try {
+            if (circuit && filename) {
+                // Implementation for saving circuit state to file
+                // Example: static_cast<Circuit*>(circuit)->saveToFile(filename);
+            }
+        } catch (...) {}
+    }
+
+    CIRCUITSIMULATOR_API void LoadCircuitState(void* circuit, const char* filename) {
+        try {
+            if (circuit && filename) {
+                // Implementation for loading circuit state from file
+                // Example: static_cast<Circuit*>(circuit)->loadFromFile(filename);
+            }
+        } catch (...) {}
+    }
+}

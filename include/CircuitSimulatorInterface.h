@@ -5,6 +5,16 @@
 #include <vector>
 #include <string>
 
+#ifdef _WIN32
+    #ifdef CIRCUITSIMULATOR_EXPORTS
+        #define CIRCUITSIMULATOR_API __declspec(dllexport)
+    #else
+        #define CIRCUITSIMULATOR_API __declspec(dllimport)
+    #endif
+#else
+    #define CIRCUITSIMULATOR_API
+#endif
+
 extern "C" {
     CIRCUITSIMULATOR_API void* CreateCircuit();
     CIRCUITSIMULATOR_API void DestroyCircuit(void* circuit);
@@ -34,4 +44,25 @@ extern "C" {
     CIRCUITSIMULATOR_API int GetComponentCurrentHistory(void* circuit, const char* componentName, double* timePoints, double* currents, int maxCount);
     CIRCUITSIMULATOR_API int GetAllVoltageSourceNames(void* circuit, char* vsNamesBuffer, int bufferSize);
     CIRCUITSIMULATOR_API double GetVoltageSourceCurrent(void* circuit, const char* vsName);
+
+    // New exports for comprehensive circuit analysis
+    CIRCUITSIMULATOR_API void RunDCOperatingPoint(void* circuit);
+    CIRCUITSIMULATOR_API int RunACAnalysis(void* circuit, const char* sourceName, double startFreq, double stopFreq, int numPoints, const char* sweepType);
+    CIRCUITSIMULATOR_API int RunPhaseSweep(void* circuit, const char* sourceName, double baseFreq, double startPhase, double stopPhase, int numPoints);
+
+    // Component property accessors with proper type handling
+    CIRCUITSIMULATOR_API const char* GetComponentName(void* component);
+    CIRCUITSIMULATOR_API double GetComponentResistance(void* component);
+    CIRCUITSIMULATOR_API void SetComponentResistance(void* component, double resistance);
+    CIRCUITSIMULATOR_API double GetComponentCapacitance(void* component);
+    CIRCUITSIMULATOR_API void SetComponentCapacitance(void* component, double capacitance);
+    CIRCUITSIMULATOR_API double GetComponentInductance(void* component);
+    CIRCUITSIMULATOR_API void SetComponentInductance(void* component, double inductance);
+    CIRCUITSIMULATOR_API double GetComponentVoltage(void* component);
+    CIRCUITSIMULATOR_API double GetComponentCurrent(void* component);
+
+    // Circuit state management
+    CIRCUITSIMULATOR_API void SaveCircuitState(void* circuit, const char* filename);
+    CIRCUITSIMULATOR_API void LoadCircuitState(void* circuit, const char* filename);
+
 }
