@@ -86,3 +86,5 @@ The simulator supports:
 - Transient Analysis
 - AC Sweep Analysis
 - Phase Sweep Analysis
+
+dotnet run --project circuitUI/circuitUI.csproj

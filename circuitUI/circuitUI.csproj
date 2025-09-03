@@ -12,6 +12,10 @@
       <PackageReference Include="ScottPlot.WPF" Version="5.0.56" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="1\" />
+    </ItemGroup>
+
     <!-- Copy the native C++ DLL after every build -->
     <Target Name="CopyCppDll" AfterTargets="Build">
         <Copy SourceFiles="$(ProjectDir)bin\Debug\net9.0-windows\CircuitSimulator.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" Condition="Exists('$(ProjectDir)bin\Debug\net9.0-windows\CircuitSimulator.dll')" />
