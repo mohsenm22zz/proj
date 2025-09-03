@@ -1,316 +1,215 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace CircuitSimulator
 {
-    public enum AnalysisType
-    {
-        DC,
-        TRANSIENT,
-        AC_SWEEP
-    }
+    // Enums required by the Analysis and Circuit classes
+    public enum AnalysisType { DC, TRANSIENT, AC_SWEEP }
+    public enum DiodeState { STATE_OFF, STATE_FORWARD_ON }
 
     public class Circuit
     {
-        public List<Node> Nodes { get; private set; }
-        public List<Resistor> Resistors { get; private set; }
-        public List<Capacitor> Capacitors { get; private set; }
-        public List<Inductor> Inductors { get; private set; }
-        public List<Diode> Diodes { get; private set; }
-        public List<VoltageSource> VoltageSources { get; private set; }
-        public List<ACVoltageSource> AcVoltageSources { get; private set; }
-        public List<CurrentSource> CurrentSources { get; private set; }
-        public List<string> GroundNodeNames { get; private set; }
+        // Component lists
+        public List<Node> Nodes { get; } = new List<Node>();
+        public List<Resistor> Resistors { get; } = new List<Resistor>();
+        public List<Capacitor> Capacitors { get; } = new List<Capacitor>();
+        public List<Inductor> Inductors { get; } = new List<Inductor>();
+        public List<VoltageSource> VoltageSources { get; } = new List<VoltageSource>();
+        public List<CurrentSource> CurrentSources { get; } = new List<CurrentSource>();
+        public List<ACVoltageSource> ACVoltageSources { get; } = new List<ACVoltageSource>();
+        public List<Diode> Diodes { get; } = new List<Diode>();
+        
+        // MNA matrices and vectors
+        public List<List<double>> MnaA { get; private set; }
+        public List<double> MnaRhs { get; private set; }
+        public List<List<Complex>> MnaAComplex { get; private set; }
+        public List<Complex> MnaRhsComplex { get; private set; }
 
+        // Simulation parameters
         public double DeltaT { get; set; }
 
-        public List<List<double>> MNA_A { get; private set; }
-        public List<double> MNA_RHS { get; private set; }
-
-        public List<List<Complex>> MNA_A_Complex { get; private set; }
-        public List<Complex> MNA_RHS_Complex { get; private set; }
+        private Dictionary<int, int> nodeMap = new Dictionary<int, int>();
+        private int branchCount;
+        private int nextNodeId = 1; // Start from 1 since 0 is reserved for ground
 
         public Circuit()
         {
-            Nodes = new List<Node>();
-            Resistors = new List<Resistor>();
-            Capacitors = new List<Capacitor>();
-            Inductors = new List<Inductor>();
-            Diodes = new List<Diode>();
-            VoltageSources = new List<VoltageSource>();
-            AcVoltageSources = new List<ACVoltageSource>();
-            CurrentSources = new List<CurrentSource>();
-            GroundNodeNames = new List<string>();
-
-            DeltaT = 0;
-
-            MNA_A = new List<List<double>>();
-            MNA_RHS = new List<double>();
-
-            MNA_A_Complex = new List<List<Complex>>();
-            MNA_RHS_Complex = new List<Complex>();
+            // Ensure there is always a ground node
+            AddNode(0, true);
         }
 
-        public void AddNode(string name)
+        public Node AddNode(int id, bool isGround = false)
         {
-            if (FindNode(name) == null)
-            {
-                Node newNode = new Node();
-                newNode.Name = name;
-                Nodes.Add(newNode);
-            }
+            var existingNode = FindNode(id);
+            if (existingNode != null) return existingNode;
+
+            var newNode = new Node(id) { IsGround = isGround };
+            Nodes.Add(newNode);
+            return newNode;
         }
 
-        public Node FindNode(string name)
+        public Node FindNode(int id) => Nodes.FirstOrDefault(n => n.Id == id);
+        public ACVoltageSource FindACVoltageSource(string name) => ACVoltageSources.FirstOrDefault(s => s.Name == name);
+
+        // Adding the missing FindOrCreateNode method
+        public Node FindOrCreateNode(string nodeName)
         {
-            foreach (Node node in Nodes)
+            // Try to find existing node with this name
+            foreach (var node in Nodes)
             {
-                if (node.Name == name)
-                {
+                if (node.Name == nodeName)
                     return node;
-                }
             }
-            return null;
+
+            // If not found, create a new node
+            var newNode = new Node(nextNodeId++) { Name = nodeName };
+            Nodes.Add(newNode);
+            return newNode;
         }
 
-        public Node FindOrCreateNode(string name)
+        private void AssignNodeAndBranchMaps()
         {
-            Node node = FindNode(name);
-            if (node != null)
+            nodeMap.Clear();
+            int nonGroundNodeCount = 0;
+            // Ensure consistent ordering for the matrix
+            foreach (var node in Nodes.Where(n => !n.IsGround).OrderBy(n => n.Id))
             {
-                return node;
+                nodeMap[node.Id] = nonGroundNodeCount++;
             }
-            AddNode(name);
-            return Nodes[Nodes.Count - 1];
-        }
 
-        public Resistor FindResistor(string name)
-        {
-            foreach (Resistor res in Resistors)
-            {
-                if (res.Name == name)
-                    return res;
+            int currentBranch = nonGroundNodeCount;
+            foreach (var vs in VoltageSources) { vs.BranchIndex = currentBranch++; }
+            foreach (var acVs in ACVoltageSources) { acVs.BranchIndex = currentBranch++; }
+            foreach (var ind in Inductors) { ind.BranchIndex = currentBranch++; }
+            foreach (var diode in Diodes.Where(d => d.GetState() == DiodeState.STATE_FORWARD_ON)) 
+            { 
+                diode.BranchIndex = currentBranch++; 
             }
-            return null;
+            
+            branchCount = currentBranch - nonGroundNodeCount;
         }
-
-        public Capacitor FindCapacitor(string name)
-        {
-            foreach (Capacitor cap in Capacitors)
-            {
-                if (cap.Name == name)
-                    return cap;
-            }
-            return null;
-        }
-
-        public Inductor FindInductor(string name)
-        {
-            foreach (Inductor ind in Inductors)
-            {
-                if (ind.Name == name)
-                    return ind;
-            }
-            return null;
-        }
-
-        public Diode FindDiode(string name)
-        {
-            foreach (Diode d in Diodes)
-            {
-                if (d.Name == name)
-                    return d;
-            }
-            return null;
-        }
-
-        public CurrentSource FindCurrentSource(string name)
-        {
-            foreach (CurrentSource cs in CurrentSources)
-            {
-                if (cs.Name == name)
-                    return cs;
-            }
-            return null;
-        }
-
-        public VoltageSource FindVoltageSource(string name)
-        {
-            foreach (VoltageSource vs in VoltageSources)
-            {
-                if (vs.Name == name)
-                    return vs;
-            }
-            return null;
-        }
-
-        public ACVoltageSource FindACVoltageSource(string name)
-        {
-            foreach (ACVoltageSource acVs in AcVoltageSources)
-            {
-                if (acVs.Name == name)
-                    return acVs;
-            }
-            return null;
-        }
-
-        public bool DeleteResistor(string name)
-        {
-            Resistor res = FindResistor(name);
-            if (res != null)
-            {
-                Resistors.Remove(res);
-                return true;
-            }
-            return false;
-        }
-
-        public bool DeleteCapacitor(string name)
-        {
-            Capacitor cap = FindCapacitor(name);
-            if (cap != null)
-            {
-                Capacitors.Remove(cap);
-                return true;
-            }
-            return false;
-        }
-
-        public bool DeleteInductor(string name)
-        {
-            Inductor ind = FindInductor(name);
-            if (ind != null)
-            {
-                Inductors.Remove(ind);
-                return true;
-            }
-            return false;
-        }
-
-        public bool DeleteDiode(string name)
-        {
-            Diode diode = FindDiode(name);
-            if (diode != null)
-            {
-                Diodes.Remove(diode);
-                return true;
-            }
-            return false;
-        }
-
-        public bool DeleteVoltageSource(string name)
-        {
-            VoltageSource vs = FindVoltageSource(name);
-            if (vs != null)
-            {
-                VoltageSources.Remove(vs);
-                return true;
-            }
-            return false;
-        }
-
-        public bool DeleteCurrentSource(string name)
-        {
-            CurrentSource cs = FindCurrentSource(name);
-            if (cs != null)
-            {
-                CurrentSources.Remove(cs);
-                return true;
-            }
-            return false;
-        }
-
-        public int CountTotalExtraVariables()
-        {
-            int mVars = VoltageSources.Count + Inductors.Count;
-            foreach (Diode diode in Diodes)
-            {
-                if (diode.GetState() == DiodeState.STATE_FORWARD_ON || diode.GetState() == DiodeState.STATE_REVERSE_ON)
-                {
-                    mVars++;
-                }
-            }
-            return mVars;
-        }
-
+        
         public void AssignDiodeBranchIndices()
         {
-            int currentBranchIdx = VoltageSources.Count + Inductors.Count;
-            foreach (Diode diode in Diodes)
+             AssignNodeAndBranchMaps();
+        }
+
+        private void InitializeMatrix(int size)
+        {
+            MnaA = new List<List<double>>(size);
+            for (int i = 0; i < size; i++)
             {
-                if (diode.GetState() == DiodeState.STATE_FORWARD_ON || diode.GetState() == DiodeState.STATE_REVERSE_ON)
-                {
-                    diode.SetBranchIndex(currentBranchIdx++);
-                }
-                else
-                {
-                    diode.SetBranchIndex(-1);
-                }
+                MnaA.Add(new List<double>(new double[size]));
+            }
+            MnaRhs = new List<double>(new double[size]);
+        }
+        
+        private void InitializeComplexMatrix(int size)
+        {
+            MnaAComplex = new List<List<Complex>>(size);
+            for (int i = 0; i < size; i++)
+            {
+                MnaAComplex.Add(new List<Complex>(new Complex[size]));
+            }
+            MnaRhsComplex = new List<Complex>(new Complex[size]);
+        }
+
+        public void SetMnaA(AnalysisType type, double freq = 0)
+        {
+            AssignNodeAndBranchMaps();
+            int size = nodeMap.Count + branchCount;
+
+            if (type == AnalysisType.AC_SWEEP)
+            {
+                InitializeComplexMatrix(size);
+                double omega = 2 * Math.PI * freq;
+                // Add component stamps for AC analysis
+                foreach (var res in Resistors) res.AddStamp(this, nodeMap, omega);
+                foreach (var cap in Capacitors) cap.AddStamp(this, nodeMap, omega);
+                foreach (var ind in Inductors) ind.AddStamp(this, nodeMap, omega);
+                foreach (var vs in VoltageSources) vs.AddStamp(this, nodeMap, omega);
+                foreach (var acVs in ACVoltageSources) acVs.AddStamp(this, nodeMap, omega);
+                foreach (var d in Diodes) d.AddStamp(this, nodeMap, omega);
+            }
+            else
+            {
+                InitializeMatrix(size);
+                 // Add component stamps for DC/Transient analysis
+                foreach (var res in Resistors) res.AddStamp(this, nodeMap);
+                foreach (var cap in Capacitors) cap.AddStamp(this, nodeMap);
+                foreach (var ind in Inductors) ind.AddStamp(this, nodeMap);
+                foreach (var vs in VoltageSources) vs.AddStamp(this, nodeMap);
+                foreach (var acVs in ACVoltageSources) acVs.AddStamp(this, nodeMap);
+                foreach (var d in Diodes) d.AddStamp(this, nodeMap);
             }
         }
 
-        public void SetDeltaT(double dt)
+        public void SetMnaRhs(AnalysisType type, double timeOrFreq = 0)
         {
-            this.DeltaT = dt;
+            int size = nodeMap.Count + branchCount;
+            var emptyRhs = new double[size].ToList();
+             var emptyRhsComplex = new Complex[size].ToList();
+
+
+            if (type == AnalysisType.AC_SWEEP)
+            {
+                 MnaRhsComplex = emptyRhsComplex;
+                // Add RHS stamps for AC analysis
+                foreach (var acVs in ACVoltageSources) acVs.AddRhsStamp(this, timeOrFreq);
+            }
+            else
+            {
+                MnaRhs = emptyRhs;
+                // Add RHS stamps for DC/Transient
+                foreach (var cs in CurrentSources) cs.AddRhsStamp(this, nodeMap);
+                foreach (var vs in VoltageSources) vs.AddRhsStamp(this, timeOrFreq);
+                foreach (var acVs in ACVoltageSources) acVs.AddRhsStamp(this, timeOrFreq, type == AnalysisType.TRANSIENT);
+                foreach (var cap in Capacitors) cap.AddRhsStamp(this, nodeMap);
+                foreach (var ind in Inductors) ind.AddRhsStamp(this, nodeMap);
+                foreach (var d in Diodes) d.AddRhsStamp(this, nodeMap);
+            }
+        }
+        
+        public void UpdateNodeVoltagesAndBranchCurrents(List<double> x)
+        {
+            foreach (var entry in nodeMap)
+            {
+                FindNode(entry.Key).Voltage = x[entry.Value];
+            }
+            foreach (var vs in VoltageSources) { vs.SetCurrent(x[vs.BranchIndex]); }
+            foreach (var acVs in ACVoltageSources) { acVs.SetCurrent(x[acVs.BranchIndex]); }
+            foreach (var ind in Inductors) { ind.Current = x[ind.BranchIndex]; }
+            foreach (var d in Diodes.Where(d => d.GetState() == DiodeState.STATE_FORWARD_ON))
+            { 
+                d.SetCurrent(x[d.BranchIndex]); 
+            }
+        }
+
+        public void UpdateNodeVoltagesAndBranchCurrentsAC(List<Complex> x, double freq)
+        {
+             foreach (var entry in nodeMap)
+            {
+                FindNode(entry.Key).AddPhasorHistoryPoint(freq, x[entry.Value]);
+            }
         }
 
         public void UpdateComponentStates()
         {
-            foreach (Capacitor cap in Capacitors)
+            foreach (var cap in Capacitors)
             {
-                cap.Update(DeltaT);
+                cap.PrevVoltage = cap.Node1.GetVoltage() - cap.Node2.GetVoltage();
             }
-            foreach (Inductor ind in Inductors)
+            foreach (var ind in Inductors)
             {
-                ind.Update(DeltaT);
+                ind.PrevCurrent = ind.Current;
             }
         }
 
         public void ClearComponentHistory()
         {
-            foreach (Node node in Nodes)
-            {
-                node.ClearHistory();
-            }
-            foreach (VoltageSource vs in VoltageSources)
-            {
-                vs.ClearHistory();
-            }
-        }
-
-        public int GetNodeMatrixIndex(Node targetNodePtr)
-        {
-            if (targetNodePtr == null || targetNodePtr.IsGround)
-            {
-                return -1;
-            }
-            int matrixIdx = 0;
-            foreach (Node nInList in Nodes)
-            {
-                if (!nInList.IsGround)
-                {
-                    if (nInList.Num == targetNodePtr.Num)
-                    {
-                        return matrixIdx;
-                    }
-                    matrixIdx++;
-                }
-            }
-            return -1;
-        }
-
-        public int CountNonGroundNodes()
-        {
-            int count = 0;
-            foreach (Node node in Nodes)
-            {
-                if (!node.IsGround)
-                {
-                    count++;
-                }
-            }
-            return count;
+             foreach (var node in Nodes) node.ClearVoltageHistory();
         }
     }
 }

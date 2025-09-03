@@ -1,50 +1,56 @@
-using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace CircuitSimulator
 {
     public class VoltageSource : Component
     {
-        public double Value { get; set; }
-        public double Current { get; set; }
-        public bool Diode { get; set; }
-
-        public List<Tuple<double, double>> CurrentHistory { get; private set; }
-        public List<Tuple<double, double>> DcSweepCurrentHistory { get; private set; }
-
-        public VoltageSource()
-        {
-            Value = 0.0;
-            Current = 0.0;
-            Diode = false;
-            CurrentHistory = new List<Tuple<double, double>>();
-            DcSweepCurrentHistory = new List<Tuple<double, double>>();
+        public double Voltage 
+        { 
+            get => Value; 
+            set => Value = value; 
         }
+        
+        public int BranchIndex { get; set; }
+        private double current;
 
-        public override double GetCurrent()
+        public VoltageSource(string name, Node node1, Node node2, double voltage)
+            : base(name, node1, node2, voltage) { }
+
+        public double GetCurrent() => current;
+        public void SetCurrent(double value) => current = value;
+
+        public void AddStamp(Circuit circuit, Dictionary<int, int> nodeMap)
         {
-            return Current;
+            if (nodeMap.TryGetValue(Node1.Id, out int n1))
+            {
+                circuit.MnaA[BranchIndex][n1] = 1;
+                circuit.MnaA[n1][BranchIndex] = 1;
+            }
+            if (nodeMap.TryGetValue(Node2.Id, out int n2))
+            {
+                circuit.MnaA[BranchIndex][n2] = -1;
+                circuit.MnaA[n2][BranchIndex] = -1;
+            }
         }
-
-        public override void SetCurrent(double current)
+        
+        public void AddRhsStamp(Circuit circuit, double time)
         {
-            Current = current;
+            circuit.MnaRhs[BranchIndex] = Value;
         }
-
-        public override double GetVoltage()
+        
+        public void AddStamp(Circuit circuit, Dictionary<int, int> nodeMap, double omega)
         {
-            return Value;
-        }
-
-        public void AddCurrentHistoryPoint(double time, double current)
-        {
-            CurrentHistory.Add(new Tuple<double, double>(time, current));
-        }
-
-        public void ClearHistory()
-        {
-            CurrentHistory.Clear();
-            DcSweepCurrentHistory.Clear();
+            if (nodeMap.TryGetValue(Node1.Id, out int n1))
+            {
+                circuit.MnaAComplex[BranchIndex][n1] = 1;
+                circuit.MnaAComplex[n1][BranchIndex] = 1;
+            }
+            if (nodeMap.TryGetValue(Node2.Id, out int n2))
+            {
+                circuit.MnaAComplex[BranchIndex][n2] = -1;
+                circuit.MnaAComplex[n2][BranchIndex] = -1;
+            }
         }
     }
 }

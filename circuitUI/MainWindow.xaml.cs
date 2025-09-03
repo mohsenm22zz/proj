@@ -1,14 +1,19 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows;
-using System.Globalization;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using CircuitSimulator;
+using circuitUI.Wires;
+using circuitUI.Simulation;
+using Microsoft.Win32;
 
-namespace wpfUI
+namespace circuitUI
 {
     public partial class MainWindow : Window
     {
@@ -531,53 +536,32 @@ namespace wpfUI
         // Helper methods to add components to the circuit
         private void AddResistorToCircuit(CircuitSimulator.Circuit circuit, string name, string node1, string node2, double value)
         {
-            var resistor = new CircuitSimulator.Resistor();
-            resistor.Name = name;
-            resistor.Node1 = circuit.FindOrCreateNode(node1);
-            resistor.Node2 = circuit.FindOrCreateNode(node2);
-            resistor.Resistance = value;
+            var resistor = new CircuitSimulator.Resistor(name, circuit.FindOrCreateNode(node1), circuit.FindOrCreateNode(node2), value);
             circuit.Resistors.Add(resistor);
         }
 
         private void AddCapacitorToCircuit(CircuitSimulator.Circuit circuit, string name, string node1, string node2, double value)
         {
-            var capacitor = new CircuitSimulator.Capacitor();
-            capacitor.Name = name;
-            capacitor.Node1 = circuit.FindOrCreateNode(node1);
-            capacitor.Node2 = circuit.FindOrCreateNode(node2);
-            capacitor.Capacitance = value;
+            var capacitor = new CircuitSimulator.Capacitor(name, circuit.FindOrCreateNode(node1), circuit.FindOrCreateNode(node2), value);
             circuit.Capacitors.Add(capacitor);
         }
 
         private void AddInductorToCircuit(CircuitSimulator.Circuit circuit, string name, string node1, string node2, double value)
         {
-            var inductor = new CircuitSimulator.Inductor();
-            inductor.Name = name;
-            inductor.Node1 = circuit.FindOrCreateNode(node1);
-            inductor.Node2 = circuit.FindOrCreateNode(node2);
-            inductor.Inductance = value;
+            var inductor = new CircuitSimulator.Inductor(name, circuit.FindOrCreateNode(node1), circuit.FindOrCreateNode(node2), value);
             circuit.Inductors.Add(inductor);
         }
 
         private void AddVoltageSourceToCircuit(CircuitSimulator.Circuit circuit, string name, string node1, string node2, double value)
         {
-            var voltageSource = new CircuitSimulator.VoltageSource();
-            voltageSource.Name = name;
-            voltageSource.Node1 = circuit.FindOrCreateNode(node1);
-            voltageSource.Node2 = circuit.FindOrCreateNode(node2);
-            voltageSource.Value = value;
+            var voltageSource = new CircuitSimulator.VoltageSource(name, circuit.FindOrCreateNode(node1), circuit.FindOrCreateNode(node2), value);
             circuit.VoltageSources.Add(voltageSource);
         }
 
         private void AddACVoltageSourceToCircuit(CircuitSimulator.Circuit circuit, string name, string node1, string node2, double magnitude, double phase)
         {
-            var acVoltageSource = new CircuitSimulator.ACVoltageSource();
-            acVoltageSource.Name = name;
-            acVoltageSource.Node1 = circuit.FindOrCreateNode(node1);
-            acVoltageSource.Node2 = circuit.FindOrCreateNode(node2);
-            acVoltageSource.Magnitude = magnitude;
-            acVoltageSource.Phase = phase;
-            circuit.AcVoltageSources.Add(acVoltageSource);
+            var acVoltageSource = new CircuitSimulator.ACVoltageSource(name, circuit.FindOrCreateNode(node1), circuit.FindOrCreateNode(node2), 0, magnitude, 1000, phase);
+            circuit.ACVoltageSources.Add(acVoltageSource);
         }
 
         private string[] GetNodeNames(CircuitSimulator.Circuit circuit)

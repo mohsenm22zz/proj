@@ -1,27 +1,27 @@
-using System;
+using System.Collections.Generic;
+using System.Numerics;
 
 namespace CircuitSimulator
 {
     public class CurrentSource : Component
     {
-        public double Value { get; set; }
-        public bool Diode { get; set; }
+        public CurrentSource(string name, Node node1, Node node2, double current)
+            : base(name, node1, node2, current) { }
 
-        public CurrentSource()
+        public void AddStamp(Circuit circuit, Dictionary<int, int> nodeMap)
         {
-            Value = 0.0;
-            Diode = false;
+            // Current sources only affect the RHS vector
         }
 
-        public override double GetCurrent()
+        public void AddRhsStamp(Circuit circuit, Dictionary<int, int> nodeMap)
         {
-            return Value;
+            if (nodeMap.TryGetValue(Node1.Id, out int n1)) circuit.MnaRhs[n1] -= Value;
+            if (nodeMap.TryGetValue(Node2.Id, out int n2)) circuit.MnaRhs[n2] += Value;
         }
-
-        public override double GetVoltage()
+        
+        public void AddStamp(Circuit circuit, Dictionary<int, int> nodeMap, double omega)
         {
-            if (Node1 == null || Node2 == null) return 0.0;
-            return Math.Abs(Node1.GetVoltage() - Node2.GetVoltage());
+            // Ideal current sources do not contribute to the A matrix in AC analysis
         }
     }
 }

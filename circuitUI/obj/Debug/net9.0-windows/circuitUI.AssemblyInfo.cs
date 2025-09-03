@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("circuitUI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+47a343f8ec3c0ae86e7382d1430a608597a182e0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4d9e89b6ea19d33a2042c871f9d63219b45588fb")]
 [assembly: System.Reflection.AssemblyProductAttribute("circuitUI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("circuitUI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

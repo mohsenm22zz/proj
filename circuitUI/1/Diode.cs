@@ -1,104 +1,72 @@
-using System;
+using System.Collections.Generic;
+using System.Numerics;
 
 namespace CircuitSimulator
 {
-    public enum DiodeType
-    {
-        NORMAL,
-        ZENER
-    }
-
-    public enum DiodeState
-    {
-        STATE_OFF = 0,
-        STATE_FORWARD_ON = 1,
-        STATE_REVERSE_ON = 2
-    }
-
     public class Diode : Component
     {
-        public DiodeType DiodeType { get; private set; }
-        public double ForwardVoltage { get; private set; }
-        public double ZenerVoltage { get; private set; }
-        
-        private DiodeState currentState;
-        private int branchIndex;
+        private const double G_ON = 1e3;  // High conductance when ON
+        private const double G_OFF = 1e-9; // Low conductance when OFF
+        private const double V_F = 0.7;    // Forward voltage drop
+
+        public int BranchIndex { get; set; }
+        private DiodeState state;
         private double current;
 
-        public Diode(string name, Node n1, Node n2, DiodeType type, double vf, double vz = 0.0)
+        public Diode(string name, Node node1, Node node2)
+            : base(name, node1, node2, 0) // Value is not used
         {
-            Name = name;
-            Node1 = n1;
-            Node2 = n2;
-            DiodeType = type;
-            currentState = DiodeState.STATE_OFF;
-            ForwardVoltage = vf;
-            ZenerVoltage = vz;
-            branchIndex = -1;
-            current = 0.0;
+            state = DiodeState.STATE_OFF;
         }
 
-        public DiodeType GetDiodeType()
-        {
-            return DiodeType;
-        }
+        public DiodeState GetState() => state;
+        public void SetState(DiodeState newState) => state = newState;
+        public double GetCurrent() => current;
+        public void SetCurrent(double value) => current = value;
+        public double GetForwardVoltage() => V_F;
 
-        public double GetForwardVoltage()
+        public void AddStamp(Circuit circuit, Dictionary<int, int> nodeMap)
         {
-            return ForwardVoltage;
-        }
-
-        public double GetZenerVoltage()
-        {
-            return ZenerVoltage;
-        }
-
-        public void SetState(DiodeState state)
-        {
-            currentState = state;
-        }
-
-        public DiodeState GetState()
-        {
-            return currentState;
-        }
-
-        public void SetBranchIndex(int index)
-        {
-            branchIndex = index;
-        }
-
-        public int GetBranchIndex()
-        {
-            return branchIndex;
-        }
-
-        public override void SetCurrent(double c)
-        {
-            current = c;
-        }
-
-        public override double GetCurrent()
-        {
-            if (currentState == DiodeState.STATE_OFF)
+            if (state == DiodeState.STATE_OFF)
             {
-                return 0.0;
+                if (nodeMap.TryGetValue(Node1.Id, out int n1)) circuit.MnaA[n1][n1] += G_OFF;
+                if (nodeMap.TryGetValue(Node2.Id, out int n2)) circuit.MnaA[n2][n2] += G_OFF;
+                if (n1 != -1 && n2 != -1 && nodeMap.ContainsKey(Node1.Id) && nodeMap.ContainsKey(Node2.Id))
+                {
+                    circuit.MnaA[n1][n2] -= G_OFF;
+                    circuit.MnaA[n2][n1] -= G_OFF;
+                }
             }
-            return current;
+            else // STATE_FORWARD_ON
+            {
+                if (nodeMap.TryGetValue(Node1.Id, out int n1))
+                {
+                    circuit.MnaA[BranchIndex][n1] = 1;
+                    circuit.MnaA[n1][BranchIndex] = 1;
+                }
+                if (nodeMap.TryGetValue(Node2.Id, out int n2))
+                {
+                    circuit.MnaA[BranchIndex][n2] = -1;
+                    circuit.MnaA[n2][BranchIndex] = -1;
+                }
+                circuit.MnaA[BranchIndex][BranchIndex] = -1.0 / G_ON;
+            }
         }
-
-        public override double GetVoltage()
+        
+        public void AddRhsStamp(Circuit circuit, Dictionary<int, int> nodeMap)
         {
-            if (Node1 == null || Node2 == null) return 0.0;
-            if (currentState == DiodeState.STATE_FORWARD_ON)
+            if (state == DiodeState.STATE_FORWARD_ON)
             {
-                return ForwardVoltage;
+                 circuit.MnaRhs[BranchIndex] = V_F;
             }
-            else if (currentState == DiodeState.STATE_REVERSE_ON)
-            {
-                return -ZenerVoltage;
-            }
-            return Node1.GetVoltage() - Node2.GetVoltage();
+        }
+        
+        public void AddStamp(Circuit circuit, Dictionary<int, int> nodeMap, double omega)
+        {
+            // For AC analysis, we use the DC operating point to linearize the diode.
+            // A simple model is to use its dynamic resistance at the Q-point.
+            // For now, we'll use the same DC model.
+            AddStamp(circuit, nodeMap);
         }
     }
 }
