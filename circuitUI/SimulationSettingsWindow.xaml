@@ -31,11 +31,11 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Stop time:" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                            <TextBox x:Name="StopTimeTextBox" Grid.Row="0" Grid.Column="1" Margin="0,0,0,10" Text="1s"/>
+                            <TextBox x:Name="StopTimeTextBox" Grid.Row="0" Grid.Column="1" Margin="0,0,0,10" Text="1"/>
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Time to start saving data:" VerticalAlignment="Center" Margin="0,0,10,10"/>
                             <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,10" Text="0"/>
                             <TextBlock Grid.Row="2" Grid.Column="0" Text="Maximum Timestep:" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                            <TextBox x:Name="MaxTimestepTextBox" Grid.Row="2" Grid.Column="1" Margin="0,0,0,10" Text="1ms"/>
+                            <TextBox x:Name="MaxTimestepTextBox" Grid.Row="2" Grid.Column="1" Margin="0,0,0,10" Text="0.05"/>
                         </Grid>
                     </StackPanel>
                 </Grid>

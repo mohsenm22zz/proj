@@ -287,6 +287,16 @@ vector<vector<double>> Circuit::C() {
 vector<vector<double>> Circuit::D() {
     int extra_vars = countTotalExtraVariables();
     vector<vector<double>> result(extra_vars, vector<double>(extra_vars, 0.0));
+
+    // Inductors contribute to D matrix in transient analysis
+    if (delta_t > 0) {
+        for (size_t k = 0; k < inductors.size(); ++k) {
+            int inductor_row = voltageSources.size() + k;
+            if (inductor_row < extra_vars) {
+                result[inductor_row][inductor_row] += inductors[k].inductance / delta_t;
+            }
+        }
+    }
     
     // Diodes in forward or reverse conducting state contribute to D matrix
     for (const auto& d : diodes) {
@@ -300,6 +310,7 @@ vector<vector<double>> Circuit::D() {
     
     return result;
 }
+
 
 vector<double> Circuit::J() {
     int num_non_gnd_nodes = countNonGroundNodes();
