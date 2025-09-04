@@ -7,96 +7,171 @@
 #include <cmath>
 #include <complex>
 #include <stdexcept>
+#include <fstream>
 
 using namespace std;
 
 void result_from_vec(Circuit& circuit, const vector<double>& solvedVoltages, const vector<Node*>& nonGroundNodes);
 
+void WriteToFile(const std::string& content)
+{
+    const char* filePath = "output.txt";
 
+    // Open file in append mode
+    std::ofstream outFile(filePath, std::ios::out | std::ios::app);  // Using std::ios::app for append mode
+    
+    if (outFile.is_open())
+    {
+        outFile << content << std::endl;  // Write the content to the file, add a newline
+        outFile.close();                  // Close the file after writing
+        std::cout << "File written successfully!" << std::endl;
+    }
+    else
+    {
+        std::cerr << "Unable to open file!" << std::endl;
+    }
+}
+// void WriteToFile(const string content)
+// {
+//     const char* filePath = "output.txt";
+//     std::ofstream outFile(filePath, std::ios::out);
+//     if (outFile.is_open())
+//     {
+//         outFile << content;  // Write the content to the file
+//         outFile.close();     // Close the file after writing
+//         std::cout << "File written successfully!" << std::endl;
+//     }
+//     else
+//     {
+//         std::cerr << "Unable to open file!" << std::endl;
+//     }
+// }
 bool dcAnalysis(Circuit& circuit) {
-    try {
-        cout << "// Performing DC Analysis..." << endl;
-        circuit.setDeltaT(1e12); // Treat capacitors as open, inductors as short
-        vector<Node*> nonGroundNodes;
-        for (auto* node : circuit.nodes) {
-            if (!node->isGround) {
-                nonGroundNodes.push_back(node);
+    WriteToFile("// Performing DC Analysis...");
+    if (circuit.resistors.empty()) {
+        WriteToFile("// No resistors found.");
+    }
+    for (auto it = circuit.resistors.begin(); it != circuit.resistors.end(); ++it) {
+        WriteToFile("Analyzing resistor: "  + it->name + " with value: " + std::to_string(it->resistance));
+    }
+    for (auto it = circuit.voltageSources.begin(); it != circuit.voltageSources.end(); ++it) {
+        WriteToFile("Analyzing voltage source: " + it->name + " with value: " + std::to_string(it->value));
+    }
+    circuit.setDeltaT(1e12);
+    vector<Node*> nonGroundNodes;
+    for (auto* node : circuit.nodes) {
+        if (!node->isGround) {
+            nonGroundNodes.push_back(node);
+        }
+    }
+
+    const int MAX_DIODE_ITERATIONS = 100;
+    bool converged = false;
+    int iteration_count = 0;
+    const double EPSILON_CURRENT = 1e-9;
+    for (auto& diode : circuit.diodes) {
+        diode.setState(STATE_OFF);
+    }
+
+    do {
+        converged = true;
+        iteration_count++;
+
+        vector<DiodeState> previous_diode_states;
+        for (const auto& diode : circuit.diodes) {
+            previous_diode_states.push_back(diode.getState());
+        }
+
+        circuit.assignDiodeBranchIndices();
+        circuit.set_MNA_A(AnalysisType::DC);
+        circuit.set_MNA_RHS(AnalysisType::DC);
+
+        if (circuit.MNA_A.empty() || circuit.MNA_A[0].empty() || circuit.MNA_RHS.empty() || circuit.MNA_A.size() != circuit.MNA_RHS.size()) {
+            WriteToFile(circuit.MNA_A.empty() ? "// MNA_A is empty." : "// MNA_A is not empty.");
+            WriteToFile(circuit.MNA_RHS.empty() ? "// MNA_RHS is empty." : "// MNA_RHS is not empty.");
+            WriteToFile("MNA_A size: " + std::to_string(circuit.MNA_A.size()));
+            WriteToFile("MNA_RHS size: " + std::to_string(circuit.MNA_RHS.size()));
+            WriteToFile("// No solvable MNA system for the current circuit state.");
+            cout << "// No solvable MNA system for the current circuit state." << endl;
+            return false;
+        }
+
+        for (auto it = circuit.MNA_A.begin(); it != circuit.MNA_A.end(); ++it) {
+            for (auto jt = it->begin(); jt != it->end(); ++jt) {
+                    (to_string(*jt) + " ");
+            }
+            WriteToFile("\n");
+        }
+        for (auto it = circuit.MNA_RHS.begin(); it != circuit.MNA_RHS.end(); ++it) {
+            WriteToFile(to_string(*it));
+            WriteToFile("\n");
+        }
+        vector<double> solved_solution;
+        try {
+            solved_solution = gaussianElimination(circuit.MNA_A, circuit.MNA_RHS);
+        } catch (const exception& e) {
+            WriteToFile("Error during Gaussian Elimination: " + std::string(e.what()));
+            cerr << "Error during Gaussian Elimination: " << e.what() << endl;
+            converged = false;
+            return false;
+        }
+
+        result_from_vec(circuit, solved_solution, nonGroundNodes);
+
+        for (size_t i = 0; i < circuit.diodes.size(); ++i) {
+            Diode& current_diode = circuit.diodes[i];
+            DiodeState old_state = previous_diode_states[i];
+
+            double v_anode = current_diode.node1->getVoltage();
+            double v_cathode = current_diode.node2->getVoltage();
+            double v_diode_across = v_anode - v_cathode;
+            DiodeState new_state = old_state;
+
+            if (current_diode.getDiodeType() == NORMAL) {
+                if (old_state == STATE_OFF) {
+                    if (v_diode_across >= current_diode.getForwardVoltage() - EPSILON_CURRENT) {
+                        new_state = STATE_FORWARD_ON;
+                    }
+                } else if (old_state == STATE_FORWARD_ON) {
+                    if (current_diode.getCurrent() < -EPSILON_CURRENT) {
+                        new_state = STATE_OFF;
+                    }
+                }
+            } else if (current_diode.getDiodeType() == ZENER) {
+                if (old_state == STATE_OFF) {
+                    if (v_diode_across >= current_diode.getForwardVoltage() - EPSILON_CURRENT) {
+                        new_state = STATE_FORWARD_ON;
+                    } else if (v_diode_across <= -current_diode.getZenerVoltage() + EPSILON_CURRENT) {
+                        new_state = STATE_REVERSE_ON;
+                    }
+                } else if (old_state == STATE_FORWARD_ON) {
+                    if (current_diode.getCurrent() < -EPSILON_CURRENT) {
+                        new_state = STATE_OFF;
+                    }
+                } else if (old_state == STATE_REVERSE_ON) {
+                    if (current_diode.getCurrent() > EPSILON_CURRENT) {
+                        new_state = STATE_OFF;
+                    }
+                }
+            }
+
+            if (new_state != old_state) {
+                converged = false;
+                current_diode.setState(new_state);
             }
         }
 
-        const int MAX_DIODE_ITERATIONS = 100;
-        bool converged = false;
-        int iteration_count = 0;
-        const double EPSILON_CURRENT = 1e-9;
+    } while (!converged && iteration_count < MAX_DIODE_ITERATIONS);
 
-        for (auto& diode : circuit.diodes) {
-            diode.setState(STATE_OFF);
-        }
-
-        do {
-            converged = true;
-            iteration_count++;
-
-            vector<DiodeState> previous_diode_states;
-            for (const auto& diode : circuit.diodes) {
-                previous_diode_states.push_back(diode.getState());
-            }
-
-            circuit.assignDiodeBranchIndices();
-            circuit.set_MNA_A(AnalysisType::DC);
-            circuit.set_MNA_RHS(AnalysisType::DC);
-
-            if (circuit.MNA_A.empty() || circuit.MNA_RHS.empty() || circuit.MNA_A.size() != circuit.MNA_RHS.size()) {
-                cerr << "Error: MNA matrix is singular or malformed." << endl;
-                return false;
-            }
-
-            for (auto it = circuit.MNA_A.begin(); it != circuit.MNA_A.end(); ++it)
-            {
-                for (auto jt = it->begin(); jt != it->end(); ++jt)
-                {
-                    cout << *jt << " ";
-                }
-                cout << endl;
-            }
-            
-            // Solve the system
-            vector<double> solved_solution = gaussianElimination(circuit.MNA_A, circuit.MNA_RHS);
-            result_from_vec(circuit, solved_solution, nonGroundNodes);
-
-            // Check if any diode has changed its state
-            for (int i = 0; i < circuit.diodes.size(); ++i) {
-                Diode& current_diode = circuit.diodes[i];
-                DiodeState old_state = previous_diode_states[i];
-                DiodeState new_state = old_state;
-
-                double v_diode_across = current_diode.node1->getVoltage() - current_diode.node2->getVoltage();
-
-                if (old_state == STATE_OFF && v_diode_across >= current_diode.getForwardVoltage() - EPSILON_CURRENT) {
-                    new_state = STATE_FORWARD_ON;
-                } else if (old_state == STATE_FORWARD_ON && current_diode.getCurrent() < -EPSILON_CURRENT) {
-                    new_state = STATE_OFF;
-                }
-                
-                if (new_state != old_state) {
-                    converged = false;
-                    current_diode.setState(new_state);
-                }
-            }
-
-        } while (!converged && iteration_count < MAX_DIODE_ITERATIONS);
-
-        if (!converged) {
-            cerr << "Warning: DC analysis for diodes did not converge after " << MAX_DIODE_ITERATIONS << " iterations." << endl;
-        }
-
-        cout << "// DC Analysis complete." << endl;
-        return true;
-
-    } catch (const std::exception& e) {
-        cerr << "Critical error during DC Analysis: " << e.what() << endl;
+    if (!converged) {
+        WriteToFile("Warning: DC Analysis did not converge after " + std::to_string(MAX_DIODE_ITERATIONS) + " iterations for diodes.");
+        cerr << "Warning: DC Analysis did not converge after " << MAX_DIODE_ITERATIONS << " iterations for diodes." << endl;
         return false;
     }
+
+    cout << "// DC Analysis complete." << endl;
+    WriteToFile("// DC Analysis complete.");
+    return true;
 }
 
 bool transientAnalysis(Circuit& circuit, double t_step, double t_stop) {

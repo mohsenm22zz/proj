@@ -35,7 +35,7 @@ namespace wpfUI
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             DrawGrid();
-            LoadDefaultCircuit(); //example
+            //LoadDefaultCircuit(); //example
         }
         private void LoadDefaultCircuit()
         {
@@ -369,6 +369,8 @@ namespace wpfUI
             var netlistWindow = new NetlistWindow(netlistCommands);
             netlistWindow.Owner = this;
             netlistWindow.ShowDialog();
+            // DCSolver.result = DCSolver.AnalyzeDCCircuit(netlistCommands);
+            // OkDialog.Show(DCSolver.result);
             try
             {
                 using (var simulator = new CircuitSimulatorService())
@@ -416,6 +418,7 @@ namespace wpfUI
                             success = simulator.RunDCAnalysis();
                             if (success)
                             {
+                                // where are other components currents?
                                 var dcResultsDict = simulator.GetAllDCResults();
                                 OkDialog.Show("DC analysis completed.");
                                 var nodeVoltages = new List<string>();
@@ -447,13 +450,16 @@ namespace wpfUI
                                 return;
                             }
                             var acResult = simulator.RunACAnalysis(acSource, _simulationParameters.StartFrequency, _simulationParameters.StopFrequency, _simulationParameters.NumberOfPoints, _simulationParameters.SweepType);
-                            if (acResult != null && acResult.Item1.Length > 0 && acResult.Item2.Length > 0) {
+                            if (acResult != null && acResult.Item1.Length > 0 && acResult.Item2.Length > 0)
+                            {
                                 // Process AC analysis results
                                 var plotWindow = new PlotWindow { Owner = this };
                                 plotWindow.LoadACData(simulator, itemsToPlot);
                                 plotWindow.Show();
                                 success = true;
-                            } else {
+                            }
+                            else
+                            {
                                 // Handle empty or null result case
                                 success = false;
                             }

@@ -4,7 +4,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
-
+#include <fstream>
 // --- HELPER FUNCTION ---
 // Safely copies a C++ string to a C-style char buffer provided by C#
 void safeStringCopy(char* buffer, int bufferSize, const std::string& source) {
@@ -18,6 +18,25 @@ void safeStringCopy(char* buffer, int bufferSize, const std::string& source) {
 }
 
 extern "C" {
+
+
+
+    void WriteToFile(const char* content)
+    {
+        const char* filePath = "output.txt";
+        std::ofstream outFile(filePath, std::ios::out);
+        if (outFile.is_open())
+        {
+            outFile << content;  // Write the content to the file
+            outFile.close();     // Close the file after writing
+            std::cout << "File written successfully!" << std::endl;
+        }
+        else
+        {
+            std::cerr << "Unable to open file!" << std::endl;
+        }
+    }
+
     Circuit* CreateCircuit() {
         try {
             return new Circuit();
@@ -190,8 +209,13 @@ extern "C" {
         if (!circuit || !nodeName) return 0.0;
         try {
             Node* node = static_cast<Circuit*>(circuit)->findNode(nodeName);
-            return node ? node->getVoltage() : 0.0;
-        } catch (...) {
+            if (!node) {
+                std::cerr << "Error: Node " << nodeName << " not found!" << std::endl;
+                return 0.0;
+            }
+            return node->getVoltage();
+        } catch (const std::exception& e) {
+            std::cerr << "Exception caught: " << e.what() << std::endl;
             return 0.0;
         }
     }
@@ -326,4 +350,152 @@ extern "C" {
             return 0.0;
         }
     }
+
+
+    int GetAllResistorNames(void* circuit, char* rNamesBuffer, int bufferSize) {
+        if (!circuit || !rNamesBuffer || bufferSize <= 0) return 0;
+            try {
+                auto* c = static_cast<Circuit*>(circuit);
+                std::stringstream ss;
+                bool first = true;
+                for (const auto& r : c->resistors) {
+                    if (!first) ss << ",";
+                    ss << r.name;
+                    first = false;
+                }
+                std::string allNames = ss.str();
+                safeStringCopy(rNamesBuffer, bufferSize, allNames);
+                return static_cast<int>(allNames.length());
+            } catch (...) {
+                return 0;
+            }
+    }
+
+    double GetResistorCurrent(Circuit* circuit, const char* name) {
+        if (!circuit || !name) return 0.0;
+        try {
+            Resistor* r = circuit->findResistor(name);
+            return r ? r->getCurrent() : 0.0;
+        } catch (...) {
+            return 0.0;
+        }
+    }
+        
+    int GetAllInductorNames(void* circuit, char* lNamesBuffer, int bufferSize) {
+        if (!circuit || !lNamesBuffer || bufferSize <= 0) return 0;
+        try {
+            auto* c = static_cast<Circuit*>(circuit);
+            std::stringstream ss;
+            bool first = true;
+            for (const auto& l : c->inductors) {
+                if (!first) ss << ",";
+                ss << l.name;
+                first = false;
+            }
+            std::string allNames = ss.str();
+            safeStringCopy(lNamesBuffer, bufferSize, allNames);
+            return static_cast<int>(allNames.length());
+        } catch (...) {
+            return 0;
+        }
+    }
+
+    double GetInductorCurrent(Circuit* circuit, const char* name) {
+        if (!circuit || !name) return 0.0;
+        try {
+            Inductor* l = circuit->findInductor(name);
+            return l ? l->getCurrent() : 0.0;
+        } catch (...) {
+            return 0.0;
+        }
+    }
+
+    int GetAllCapacitorNames(Circuit* circuit, char* cNamesBuffer, int bufferSize) {
+        if (!circuit || !cNamesBuffer || bufferSize <= 0) return 0;
+        try {
+            auto* c = static_cast<Circuit*>(circuit);
+            std::stringstream ss;
+            bool first = true;
+            for (const auto& c : c->capacitors) {
+                if (!first) ss << ",";
+                ss << c.name;
+                first = false;
+            }
+            std::string allNames = ss.str();
+            safeStringCopy(cNamesBuffer, bufferSize, allNames);
+            return static_cast<int>(allNames.length());
+        } catch (...) {
+            return 0;
+        }
+    }
+
+    double GetCapacitorCurrent(Circuit* circuit, const char* name) {
+        if (!circuit || !name) return 0.0;
+        try {
+            Capacitor* c = circuit->findCapacitor(name);
+            return c ? c->getCurrent() : 0.0;
+        } catch (...) {
+            return 0.0;
+        }
+    }
+
+    int GetAllCurrentSourceNames(Circuit* circuit, char* csNamesBuffer, int bufferSize) {
+        if (!circuit || !csNamesBuffer || bufferSize <= 0) return 0;
+        try {
+            auto* c = static_cast<Circuit*>(circuit);
+            std::stringstream ss;
+            bool first = true;
+            for (const auto& cs : c->currentSources) {
+                if (!first) ss << ",";
+                ss << cs.name;
+                first = false;
+            }
+            std::string allNames = ss.str();
+            safeStringCopy(csNamesBuffer, bufferSize, allNames);
+            return static_cast<int>(allNames.length());
+        } catch (...) {
+            return 0;
+        }
+    }
+
+    double GetCurrentSourceCurrent(Circuit* circuit, const char* name) {
+        if (!circuit || !name) return 0.0;
+        try {
+            CurrentSource* cs = circuit->findCurrentSource(name);
+            return cs ? cs->getCurrent() : 0.0;
+        } catch (...) {
+            return 0.0;
+        }
+    }
+
+    int GetAllDiodeNames(Circuit* circuit, char* dNamesBuffer, int bufferSize) {
+        if (!circuit || !dNamesBuffer || bufferSize <= 0) return 0;
+        try {
+            auto* c = static_cast<Circuit*>(circuit);
+            std::stringstream ss;
+            bool first = true;
+            for (const auto& d : c->diodes) {
+                if (!first) ss << ",";
+                ss << d.name;
+                first = false;
+            }
+            std::string allNames = ss.str();
+            safeStringCopy(dNamesBuffer, bufferSize, allNames);
+            return static_cast<int>(allNames.length());
+        } catch (...) {
+            return 0;
+        }
+    }
+
+    double GetDiodeCurrent(Circuit* circuit, const char* name) {
+        if (!circuit || !name) return 0.0;
+        try {
+            Diode* d = circuit->findDiode(name);
+            return d ? d->getCurrent() : 0.0;
+        } catch (...) {
+            return 0.0;
+        }
+    }
+
+
 }

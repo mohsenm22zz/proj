@@ -5,6 +5,27 @@
 #include <vector>
 #include <string>
 #include <complex>
+#include <fstream>
+#include <iostream>
+
+void WriteToFile1(const std::string& content)
+{
+    const char* filePath = "output.txt";
+
+    // Open file in append mode
+    std::ofstream outFile(filePath, std::ios::out | std::ios::app);  // Using std::ios::app for append mode
+    
+    if (outFile.is_open())
+    {
+        outFile << content << std::endl;  // Write the content to the file, add a newline
+        outFile.close();                  // Close the file after writing
+        std::cout << "File written successfully!" << std::endl;
+    }
+    else
+    {
+        std::cerr << "Unable to open file!" << std::endl;
+    }
+}
 
 Circuit::Circuit() : delta_t(0) {}
 
@@ -155,32 +176,36 @@ void Circuit::assignDiodeBranchIndices() {
 }
 
 vector<vector<double>> Circuit::G() {
-    int n = countNonGroundNodes();
-    vector<vector<double>> result(n, vector<double>(n, 0.0));
-    
-    // Resistors contribute to G matrix
-    for (const auto& res : resistors) {
-        int n1_index = getNodeMatrixIndex(res.node1);
-        int n2_index = getNodeMatrixIndex(res.node2);
-        
-        if (n1_index != -1 && n2_index != -1) {
-            double g = 1.0 / res.resistance;
-            if (n1_index == n2_index) continue; // Skip if both terminals on same node
-            
-            if (n1_index != -1) {
-                result[n1_index][n1_index] += g;
-            }
-            if (n2_index != -1) {
-                result[n2_index][n2_index] += g;
-            }
-            if (n1_index != -1 && n2_index != -1) {
-                result[n1_index][n2_index] -= g;
-                result[n2_index][n1_index] -= g;
+    int num_non_gnd_nodes = countNonGroundNodes();
+    vector<vector<double>> g_matrix(num_non_gnd_nodes, vector<double>(num_non_gnd_nodes, 0.0));
+
+    for (const auto &res: resistors) {
+        if (res.resistance == 0) continue;
+        double conductance = 1.0 / res.resistance;
+        int idx1 = getNodeMatrixIndex(res.node1);
+        int idx2 = getNodeMatrixIndex(res.node2);
+        if (idx1 != -1) g_matrix[idx1][idx1] += conductance;
+        if (idx2 != -1) g_matrix[idx2][idx2] += conductance;
+        if (idx1 != -1 && idx2 != -1) {
+            g_matrix[idx1][idx2] -= conductance;
+            g_matrix[idx2][idx1] -= conductance;
+        }
+    }
+
+    if (delta_t > 0) {
+        for (const auto &cap: capacitors) {
+            double equiv_conductance = cap.capacitance / delta_t;
+            int idx1 = getNodeMatrixIndex(cap.node1);
+            int idx2 = getNodeMatrixIndex(cap.node2);
+            if (idx1 != -1) g_matrix[idx1][idx1] += equiv_conductance;
+            if (idx2 != -1) g_matrix[idx2][idx2] += equiv_conductance;
+            if (idx1 != -1 && idx2 != -1) {
+                g_matrix[idx1][idx2] -= equiv_conductance;
+                g_matrix[idx2][idx1] -= equiv_conductance;
             }
         }
     }
-    
-    return result;
+    return g_matrix;
 }
 
 vector<vector<double>> Circuit::B() {
@@ -277,65 +302,55 @@ vector<vector<double>> Circuit::D() {
 }
 
 vector<double> Circuit::J() {
-    int extra_vars = countTotalExtraVariables();
-    vector<double> result(extra_vars, 0.0);
-    
-    // Voltage sources contribute to J vector
-    for (size_t i = 0; i < voltageSources.size(); ++i) {
-        result[i] = voltageSources[i].value;
+    int num_non_gnd_nodes = countNonGroundNodes();
+    vector<double> j_vector(num_non_gnd_nodes, 0.0);
+
+    for (const auto &cs: currentSources) {
+        int p_node_idx = getNodeMatrixIndex(cs.node1);
+        int n_node_idx = getNodeMatrixIndex(cs.node2);
+        if (p_node_idx != -1) j_vector[p_node_idx] += cs.value;
+        if (n_node_idx != -1) j_vector[n_node_idx] -= cs.value;
     }
-    
-    // Inductors contribute to J vector
-    for (size_t i = 0; i < inductors.size(); ++i) {
-        int ind_index = voltageSources.size() + i;
-        if (ind_index < extra_vars) {
-            // For backward Euler: v_L(n+1) = L/dt * (i_L(n+1) - i_L(n))
-            // Rearranging: -L/dt * i_L(n+1) = -L/dt * i_L(n) - v_L(n+1)
-            // So the term added to RHS is -L/dt * i_L(n)
-            result[ind_index] = -inductors[i].inductance / delta_t * inductors[i].prevCurrent;
+
+    if (delta_t > 0) {
+        for (const auto &cap: capacitors) {
+            double cap_rhs_term = (cap.capacitance / delta_t) * cap.prevVoltage;
+            int idx1 = getNodeMatrixIndex(cap.node1);
+            int idx2 = getNodeMatrixIndex(cap.node2);
+            if (idx1 != -1) j_vector[idx1] += cap_rhs_term;
+            if (idx2 != -1) j_vector[idx2] -= cap_rhs_term;
         }
     }
-    
-    return result;
+    return j_vector;
 }
 
 vector<double> Circuit::E() {
-    int n = countNonGroundNodes();
-    vector<double> result(n, 0.0);
-    
-    // Current sources contribute to E vector
-    for (const auto& cs : currentSources) {
-        int n1_index = getNodeMatrixIndex(cs.node1);
-        int n2_index = getNodeMatrixIndex(cs.node2);
-        
-        if (n1_index != -1) {
-            result[n1_index] += cs.value;
-        }
-        if (n2_index != -1) {
-            result[n2_index] -= cs.value;
-        }
-    }
-    
-    // Capacitors contribute to E vector
-    for (const auto& cap : capacitors) {
-        int n1_index = getNodeMatrixIndex(cap.node1);
-        int n2_index = getNodeMatrixIndex(cap.node2);
-        double i_cap = cap.capacitance / delta_t * (cap.node1->getVoltage() - cap.node2->getVoltage() - cap.prevVoltage);
-        
-        if (n1_index != -1) {
-            result[n1_index] += i_cap;
-        }
-        if (n2_index != -1) {
-            result[n2_index] -= i_cap;
-        }
-    }
-    
-    return result;
-}
+    int m_vars = countTotalExtraVariables();
+    if (m_vars == 0) return {};
+    vector<double> e_vector(m_vars, 0.0);
 
-// --- MODIFIED ---
-// This function is now a dispatcher. It builds the correct MNA matrix
-// based on the analysis type.
+    for (size_t j = 0; j < voltageSources.size(); ++j) {
+        e_vector[j] = voltageSources[j].value;
+    }
+
+    if (delta_t > 0) {
+        for (size_t k = 0; k < inductors.size(); ++k) {
+            int inductor_row = voltageSources.size() + k;
+            e_vector[inductor_row] = -(inductors[k].inductance / delta_t) * inductors[k].prevCurrent;
+        }
+    }
+
+    for (const auto& d : diodes) {
+        if (d.getState() == STATE_FORWARD_ON) {
+            int diode_row = d.getBranchIndex();
+            e_vector[diode_row] = d.getForwardVoltage();
+        } else if (d.getState() == STATE_REVERSE_ON) {
+            int diode_row = d.getBranchIndex();
+            e_vector[diode_row] = -d.getZenerVoltage();
+        }
+    }
+    return e_vector;
+}
 void Circuit::set_MNA_A(AnalysisType type, double frequency) {
     if (type == AnalysisType::AC_SWEEP) {
         // --- NEW LOGIC FOR AC ANALYSIS ---
@@ -401,53 +416,48 @@ void Circuit::set_MNA_A(AnalysisType type, double frequency) {
         }
 
     } else {
-        // --- EXISTING LOGIC FOR DC/TRANSIENT ---
-        // (This is the original implementation using real numbers)
-        vector<vector<double>> g_mat = G();
-        vector<vector<double>> b_mat = B();
-        vector<vector<double>> c_mat = C();
-        vector<vector<double>> d_mat = D();
-        int n = g_mat.size();
-        int m = countTotalExtraVariables();
-
-        MNA_A.assign(n + m, vector<double>(n + m, 0.0));
-        
-        // Fill G matrix
+    assignDiodeBranchIndices();
+    vector<vector<double>> g_mat = G();
+    vector<vector<double>> b_mat = B();
+    vector<vector<double>> c_mat = C();
+    vector<vector<double>> d_mat = D();
+    int n = g_mat.size();
+    int m = countTotalExtraVariables();
+    WriteToFile1("[set_MNA_A] n = " + std::to_string(n) + ", m = " + std::to_string(m) + ", total size = " + std::to_string(n + m));
+    MNA_A.assign(n + m, vector<double>(n + m, 0.0));
+    if (n > 0) {
         for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
+            for (int j = 0; j < n; ++j) {
                 MNA_A[i][j] = g_mat[i][j];
             }
         }
-        
-        // Fill B matrix
+    }
+    if (m > 0 && n > 0) {
         for (int i = 0; i < n; i++) {
-            for (int j = 0; j < m; j++) {
-                if (!b_mat.empty() && i < b_mat.size() && j < b_mat[0].size()) {
-                    MNA_A[i][n + j] = b_mat[i][j];
-                }
-            }
-        }
-        
-        // Fill C matrix
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++) {
-                if (!c_mat.empty() && i < c_mat.size() && j < c_mat[0].size()) {
-                    MNA_A[n + i][j] = c_mat[i][j];
-                }
-            }
-        }
-        
-        // Fill D matrix
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < m; j++) {
-                if (!d_mat.empty() && i < d_mat.size() && j < d_mat[0].size()) {
-                    MNA_A[n + i][n + j] = d_mat[i][j];
-                }
+            for (int j = 0; j < m; ++j) {
+                MNA_A[i][n + j] = b_mat[i][j];
             }
         }
     }
+    if (m > 0 && n > 0) {
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; ++j) {
+                MNA_A[n + i][j] = c_mat[i][j];
+            }
+        }
+    }
+    if (m > 0) {
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < m; ++j) {
+                MNA_A[n + i][n + j] = d_mat[i][j];
+            }
+        }
+    }
+    int nk = countNonGroundNodes();
+    int mk = countTotalExtraVariables();
+    WriteToFile1("[set_MNA_A] n = " + std::to_string(nk) + ", m = " + std::to_string(mk) + ", total size = " + std::to_string(nk + mk));
+   }
 }
-
 // The set_MNA_RHS function would be similarly modified to handle complex values for AC sources.
 void Circuit::set_MNA_RHS(AnalysisType type, double frequency) {
     if (type == AnalysisType::AC_SWEEP) {
@@ -461,14 +471,29 @@ void Circuit::set_MNA_RHS(AnalysisType type, double frequency) {
         }
         // Note: AC current sources would contribute to the 'J' part of the vector
     } else {
-        // Original implementation for DC/Transient
-        vector<double> j_vec = J();
-        vector<double> e_vec = E();
-        int n = j_vec.size();
-        int m = countTotalExtraVariables();
-        MNA_RHS.assign(n + m, 0.0);
-        for (int i = 0; i < n; i++) MNA_RHS[i] = j_vec[i];
-        for (int i = 0; i < m; i++) MNA_RHS[n + i] = e_vec[i];
+        WriteToFile1("// Performing DC/Transient Analysis... 2 RHS");
+       assignDiodeBranchIndices();
+    vector<double> j_vec = J();
+    vector<double> e_vec = E();
+    WriteToFile1("[set_MNA_RHS] j_vec size = " + std::to_string(j_vec.size()) + ", e_vec size = " + std::to_string(e_vec.size()));
+    int n = j_vec.size();
+    int m = countTotalExtraVariables();
+    MNA_RHS.assign(n + m, 0.0);
+    for (int i = 0; i < n; i++) MNA_RHS[i] = j_vec[i];
+    for (int i = 0; i < m; i++) MNA_RHS[n + i] = e_vec[i];
+    
+    for (auto it = j_vec.begin(); it != j_vec.end(); ++it) {
+        WriteToFile1(to_string(*it)+ "\n");
+    }
+    WriteToFile1("\n");
+    for (auto it = e_vec.begin(); it != e_vec.end(); ++it) {
+        WriteToFile1(to_string(*it)+ "\n");
+    }
+    WriteToFile1("\n");
+    WriteToFile1("\n");
+    int nk = j_vec.size();
+    int mk = countTotalExtraVariables();
+    WriteToFile1("[set_MNA_RHS] n = " + std::to_string(nk) + ", m = " + std::to_string(mk) + ", total size = " + std::to_string(nk + mk));
     }
 }
 

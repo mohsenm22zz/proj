@@ -120,6 +120,39 @@ namespace wpfUI
         private static extern double GetVoltageSourceCurrent(IntPtr circuit, string vsName);
 
 
+
+
+        // Existing imports
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+private static extern int GetAllResistorNames(IntPtr circuit, StringBuilder rNamesBuffer, int bufferSize);
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+private static extern double GetResistorCurrent(IntPtr circuit, string name);
+
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+private static extern int GetAllInductorNames(IntPtr circuit, StringBuilder lNamesBuffer, int bufferSize);
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+private static extern double GetInductorCurrent(IntPtr circuit, string name);
+
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+private static extern int GetAllCapacitorNames(IntPtr circuit, StringBuilder cNamesBuffer, int bufferSize);
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+private static extern double GetCapacitorCurrent(IntPtr circuit, string name);
+
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+private static extern int GetAllCurrentSourceNames(IntPtr circuit, StringBuilder csNamesBuffer, int bufferSize);
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+private static extern double GetCurrentSourceCurrent(IntPtr circuit, string name);
+
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+private static extern int GetAllDiodeNames(IntPtr circuit, StringBuilder dNamesBuffer, int bufferSize);
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+private static extern double GetDiodeCurrent(IntPtr circuit, string name);
+
+
+
+
+
+
         private IntPtr circuitHandle;
         private bool disposed = false;
 
@@ -196,32 +229,74 @@ namespace wpfUI
         }
         
         // --- NEW: Public method to get all DC results for the results window ---
-        public Dictionary<string, double> GetAllDCResults()
-        {
-            var results = new Dictionary<string, double>();
-            
-            // Get all node voltages
-            var nodeNames = GetNodeNames();
-            foreach (var nodeName in nodeNames)
-            {
-                results[$"V({nodeName})"] = GetNodeVoltage(nodeName);
-            }
+    public Dictionary<string, double> GetAllDCResults()
+    {
+        var results = new Dictionary<string, double>();
+        const int maxBufferSize = 2048;
 
-            // Get all voltage source currents
-            const int maxBufferSize = 2048;
-            StringBuilder buffer = new StringBuilder(maxBufferSize);
-            int length = GetAllVoltageSourceNames(circuitHandle, buffer, buffer.Capacity);
-            if (length > 0)
-            {
-                var vsNames = buffer.ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                foreach (var vsName in vsNames)
-                {
-                    results[$"I({vsName})"] = GetVoltageSourceCurrent(circuitHandle, vsName);
-                }
-            }
-            
-            return results;
+        // 1. Node Voltages
+        var nodeNames = GetNodeNames();
+        foreach (var nodeName in nodeNames)
+        {
+            results[$"V({nodeName})"] = GetNodeVoltage(nodeName);
         }
+        
+        // 2. Voltage Source Currents
+        var vsNames = GetComponentNames(GetAllVoltageSourceNames);
+        foreach (var vsName in vsNames)
+        {
+            results[$"I({vsName})"] = GetVoltageSourceCurrent(circuitHandle, vsName);
+        }
+
+        // 3. Resistor Currents
+        var rNames = GetComponentNames(GetAllResistorNames);
+        foreach (var rName in rNames)
+        {
+            results[$"I({rName})"] = GetResistorCurrent(circuitHandle, rName);
+        }
+
+        // 4. Inductor Currents
+        var lNames = GetComponentNames(GetAllInductorNames);
+        foreach (var lName in lNames)
+        {
+            results[$"I({lName})"] = GetInductorCurrent(circuitHandle, lName);
+        }
+
+        // 5. Capacitor Currents
+        var cNames = GetComponentNames(GetAllCapacitorNames);
+        foreach (var cName in cNames)
+        {
+            results[$"I({cName})"] = GetCapacitorCurrent(circuitHandle, cName);
+        }
+
+        // 6. Current Source Currents
+        var csNames = GetComponentNames(GetAllCurrentSourceNames);
+        foreach (var csName in csNames)
+        {
+            results[$"I({csName})"] = GetCurrentSourceCurrent(circuitHandle, csName);
+        }
+
+        // 7. Diode Currents
+        var dNames = GetComponentNames(GetAllDiodeNames);
+        foreach (var dName in dNames)
+        {
+            results[$"I({dName})"] = GetDiodeCurrent(circuitHandle, dName);
+        }
+
+        return results;
+    }
+
+// Helper method to reuse component name retrieval logic
+private string[] GetComponentNames(Func<IntPtr, StringBuilder, int, int> getComponentNames)
+{
+    StringBuilder buffer = new StringBuilder(2048);
+    int length = getComponentNames(circuitHandle, buffer, buffer.Capacity);
+    if (length > 0)
+    {
+        return buffer.ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+    }
+    return new string[0];
+}
         
         public void Dispose()
         {

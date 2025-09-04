@@ -73,3 +73,4 @@ C:\Users\mzake\.vscode\projects\proj\circuitUI\obj\Debug\net9.0-windows\refint\c
 C:\Users\mzake\.vscode\projects\proj\circuitUI\obj\Debug\net9.0-windows\circuitUI.pdb
 C:\Users\mzake\.vscode\projects\proj\circuitUI\obj\Debug\net9.0-windows\circuitUI.genruntimeconfig.cache
 C:\Users\mzake\.vscode\projects\proj\circuitUI\obj\Debug\net9.0-windows\ref\circuitUI.dll
+C:\Users\mzake\.vscode\projects\proj\circuitUI\bin\Debug\net9.0-windows\MathNet.Numerics.dll

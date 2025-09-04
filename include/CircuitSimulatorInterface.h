@@ -16,6 +16,7 @@
 // #endif
 
 extern "C" {
+    CS_EXTERN CS_API void __cdecl WriteToFile(const char* content);
     CS_EXTERN CS_API Circuit* __cdecl CreateCircuit();
     CS_EXTERN CS_API void __cdecl DestroyCircuit(Circuit* circuit);
     CS_EXTERN CS_API void __cdecl AddNode(void* circuit, const char* name);
@@ -45,6 +46,26 @@ extern "C" {
     CS_EXTERN CS_API int __cdecl GetComponentCurrentHistory(void* circuit, const char* componentName, double* timePoints, double* currents, int maxCount);
     CS_EXTERN CS_API int __cdecl GetAllVoltageSourceNames(void* circuit, char* vsNamesBuffer, int bufferSize);
     CS_EXTERN CS_API double __cdecl GetVoltageSourceCurrent(void* circuit, const char* vsName);
+
+
+
+    CS_EXTERN CS_API int GetAllResistorNames(void* circuit, char* rNamesBuffer, int bufferSize);
+    CS_EXTERN CS_API double GetResistorCurrent(Circuit* circuit, const char* name);
+
+    CS_EXTERN CS_API int GetAllInductorNames(void* circuit, char* lNamesBuffer, int bufferSize);
+    CS_EXTERN CS_API double GetInductorCurrent(Circuit* circuit, const char* name);
+
+    CS_EXTERN CS_API int GetAllCapacitorNames(Circuit* circuit, char* cNamesBuffer, int bufferSize);
+    CS_EXTERN CS_API double GetCapacitorCurrent(Circuit* circuit, const char* name);
+
+    CS_EXTERN CS_API int GetAllCurrentSourceNames(Circuit* circuit, char* csNamesBuffer, int bufferSize);
+    CS_EXTERN CS_API double GetCurrentSourceCurrent(Circuit* circuit, const char* name);
+
+    CS_EXTERN CS_API int GetAllDiodeNames(Circuit* circuit, char* dNamesBuffer, int bufferSize);
+    CS_EXTERN CS_API double GetDiodeCurrent(Circuit* circuit, const char* name);
+
+
+
 
     // New exports for comprehensive circuit analysis
     CS_EXTERN CS_API void __cdecl RunDCOperatingPoint(void* circuit);
