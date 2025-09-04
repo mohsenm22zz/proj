@@ -1,4 +1,6 @@
 #include "VoltageSource.h"
+#include "Node.h"
+#include <cmath>
 
 using namespace std;
 
@@ -6,19 +8,11 @@ double VoltageSource::getCurrent() {
     return current;
 }
 
-void VoltageSource::setCurrent(double c) {
-    current = c;
-}
-
 double VoltageSource::getVoltage() {
+    if (!node1 || !node2) return 0.0;
     return value;
 }
 
-void VoltageSource::addCurrentHistoryPoint(double time, double cur) {
-    current_history.push_back({time, cur});
-}
-
-void VoltageSource::clearHistory() {
-    current_history.clear();
-    dc_sweep_current_history.clear();
+void VoltageSource::setCurrent(double c) {
+    this->current = c;
 }

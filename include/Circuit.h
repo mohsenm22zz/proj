@@ -1,26 +1,16 @@
 #pragma once
 
-#include <vector>
-#include <string>
-#include <list>
-#include <map>
-#include <memory>
-#include <complex>
-
-class Node;
-class Component;
-
 #include "Node.h"
 #include "Resistor.h"
 #include "Capacitor.h"
 #include "Inductor.h"
-#include "Diode.h"
 #include "VoltageSource.h"
-#include "CurrentSource.h"
 #include "ACVoltageSource.h"
-#include "Component.h"
-
-using namespace std;
+#include "CurrentSource.h"
+#include "Diode.h"
+#include <vector>
+#include <complex>
+#include <string>
 
 enum class AnalysisType {
     DC,
@@ -28,78 +18,64 @@ enum class AnalysisType {
     AC_SWEEP
 };
 
-
 class Circuit {
 public:
-
-    // === ADDED ===
-    Circuit();                 // <-- declare ctor (defined in Circuit.cpp)
-    ~Circuit();                // <-- declare dtor (defined in Circuit.cpp)
-
-
-    vector<Node*> nodes;
-    vector<Resistor> resistors;
-    vector<Capacitor> capacitors;
-    vector<Inductor> inductors;
-    vector<Diode> diodes;
-    vector<VoltageSource> voltageSources;
-    vector<ACVoltageSource> acVoltageSources;
-    vector<CurrentSource> currentSources;
-    vector<string> groundNodeNames;
-
-    double delta_t;
-
-    vector<vector<double>> MNA_A;
-    vector<double> MNA_RHS;
-
-    vector<vector<complex<double>>> MNA_A_Complex;
-    vector<complex<double>> MNA_RHS_Complex;
+    std::vector<Node*> nodes;
+    std::vector<Resistor> resistors;
+    std::vector<Capacitor> capacitors;
+    std::vector<Inductor> inductors;
+    std::vector<VoltageSource> voltageSources;
+    std::vector<ACVoltageSource> acVoltageSources;
+    std::vector<CurrentSource> currentSources;
+    std::vector<Diode> diodes;
     
-    // === ADDED ===
-    vector<double> MNA_solution;   // <-- used by Circuit.cpp (MNA_sol_size / resize)
+    double delta_t;
+    double currentTime;
 
+    // --- MNA System Matrices ---
+    std::vector<std::vector<double>> MNA_A;
+    std::vector<double> MNA_RHS;
+    std::vector<double> MNA_solution;
+    std::vector<std::vector<std::complex<double>>> MNA_A_Complex;
+    std::vector<std::complex<double>> MNA_RHS_Complex;
+    
+    
+    std::vector<std::string> groundNodeNames;
 
-    vector<vector<double>> G();
-    vector<vector<double>> B();
-    vector<vector<double>> C();
-    vector<vector<double>> D();
-    vector<double> J();
-    vector<double> E();
+    // --- Constructor & Destructor ---
+    Circuit();
+    ~Circuit();
 
-    void addNode(const string& name);
-    Node* findNode(const string& name);
-    Node* findOrCreateNode(const string& name);
+    void addNode(const std::string& name);
+    Node* findNode(const std::string& find_from_name);
+    Node* findOrCreateNode(const std::string& name);
+    void setGroundNode(const std::string& node_name);
 
-    Resistor* findResistor(const string& name);
-    Capacitor* findCapacitor(const string& name);
-    Inductor* findInductor(const string& name);
-    Diode* findDiode(const string& name);
-    CurrentSource* findCurrentSource(const string& name);
-    VoltageSource* findVoltageSource(const string& name);
-    ACVoltageSource* findACVoltageSource(const string& name);
+    // --- Find Component Methods ---
+    Resistor* findResistor(const std::string& find_from_name);
+    Capacitor* findCapacitor(const std::string& find_from_name);
+    Inductor* findInductor(const std::string& find_from_name);
+    VoltageSource* findVoltageSource(const std::string& find_from_name);
+    ACVoltageSource* findACVoltageSource(const std::string& find_from_name);
+    CurrentSource* findCurrentSource(const std::string& find_from_name);
+    Diode* findDiode(const std::string& find_from_name);
 
-    bool deleteResistor(const string& name);
+    // --- MNA Matrix Methods ---
     void set_MNA_A(AnalysisType type, double frequency = 0);
     void set_MNA_RHS(AnalysisType type, double frequency = 0);
-
-    // === ADDED (these are called in Circuit.cpp) ===
-    bool deleteCapacitor(const string& name);
-    bool deleteInductor(const string& name);
-    bool deleteDiode(const string& name);
-    bool deleteVoltageSource(const string& name);
-    bool deleteCurrentSource(const string& name);
-
-    // === ADDED (used in Circuit.cpp) ===
-    void MNA_sol_size();                          // <-- resizes MNA_solution
-
-    // === ADDED (used in Circuit.cpp) ===
-    bool isNodeNameGround(const string& node_name) const;
-
+    void MNA_sol_size();
+    
+    // --- Analysis Helpers ---
     void setDeltaT(double dt);
     void updateComponentStates();
     void clearComponentHistory();
-    int getNodeMatrixIndex(const Node* target_node_ptr) const;
-    int countNonGroundNodes() const;
-    int countTotalExtraVariables();
     void assignDiodeBranchIndices();
+
+    // --- Indexing and Utility ---
+    int findNodeIndex(const std::string& name);
+    int findVoltageSourceIndex(const std::string& name);
+    int findACVoltageSourceIndex(const std::string& name);
+    int getNodeMatrixIndex(const Node* target_node_ptr) const;
+    bool isNodeNameGround(const std::string& node_name) const;
 };
+

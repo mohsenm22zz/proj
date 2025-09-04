@@ -203,18 +203,42 @@ bool transientAnalysis(Circuit& circuit, double t_step, double t_stop) {
             if (!node->isGround) node->addVoltageHistoryPoint(0.0, node->getVoltage());
         }
 
-        circuit.setDeltaT(t_step);
+         circuit.setDeltaT(t_step);
 
         for (double t = t_step; t <= t_stop; t += t_step) {
+            circuit.currentTime = t;
             circuit.set_MNA_A(AnalysisType::TRANSIENT);
             circuit.set_MNA_RHS(AnalysisType::TRANSIENT);
 
             vector<double> solved_solution = gaussianElimination(circuit.MNA_A, circuit.MNA_RHS);
+            
             result_from_vec(circuit, solved_solution, nonGroundNodes);
 
             for (auto* node : circuit.nodes) {
                 if (!node->isGround) node->addVoltageHistoryPoint(t, node->getVoltage());
             }
+             for (auto& r : circuit.resistors) {
+          double r_current = (r.node1->getVoltage() - r.node2->getVoltage()) / r.resistance;
+          r.setCurrent(r_current);
+          r.addCurrentHistoryPoint(t, r_current);
+        }
+        for (auto& c : circuit.capacitors) {
+            double c_current = c.capacitance * ((c.node1->getVoltage() - c.node2->getVoltage()) - c.prevVoltage) / t_step;
+            c.setCurrent(c_current);
+            c.addCurrentHistoryPoint(t, c_current);
+        }
+        for (auto& l : circuit.inductors) {
+            l.addCurrentHistoryPoint(t, l.getCurrent()); // Current is already solved by MNA
+        }
+        for (auto& vs : circuit.voltageSources) {
+            vs.addCurrentHistoryPoint(t, vs.getCurrent()); // Current is already solved by MNA
+        }
+        for (auto& ac_vs : circuit.acVoltageSources) {
+            // NOTE: AC source current in transient is not being solved by MNA.
+            // This would require modification to the MNA builder to treat it as a standard voltage source.
+            // For now, we'll add a placeholder.
+            ac_vs.addCurrentHistoryPoint(t, 0.0);
+        }
 
             circuit.updateComponentStates(); // Update prevVoltage/prevCurrent for next step
         }

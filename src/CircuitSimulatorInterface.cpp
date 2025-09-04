@@ -302,25 +302,75 @@ extern "C" {
     }
 
     int GetComponentCurrentHistory(void* circuit, const char* componentName, double* timePoints, double* currents, int maxCount) {
-        if (!circuit || !componentName || !timePoints || !currents || maxCount <= 0) return 0;
-        try {
-            Circuit* c = static_cast<Circuit*>(circuit);
-            VoltageSource* vs = c->findVoltageSource(componentName);
-            if (vs) {
-                int count = 0;
-                for (const auto& point : vs->current_history) {
-                    if (count >= maxCount) break;
-                    timePoints[count] = point.first;
-                    currents[count] = point.second;
-                    count++;
-                }
-                return count;
+    if (!circuit || !componentName || !timePoints || !currents || maxCount <= 0) return 0;
+    try {
+        Circuit* c = static_cast<Circuit*>(circuit);
+        Component* foundComponent = nullptr;
+
+        // --- START MODIFIED CODE ---
+        std::string nameStr(componentName);
+
+        // Check Resistors
+        for (auto& comp : c->resistors) {
+            if (comp.name == nameStr) {
+                foundComponent = &comp;
+                break;
             }
-            return 0;
-        } catch (...) {
-            return 0;
         }
+        // Check Capacitors
+        if (!foundComponent) {
+            for (auto& comp : c->capacitors) {
+                if (comp.name == nameStr) {
+                    foundComponent = &comp;
+                    break;
+                }
+            }
+        }
+        // Check Inductors
+        if (!foundComponent) {
+            for (auto& comp : c->inductors) {
+                if (comp.name == nameStr) {
+                    foundComponent = &comp;
+                    break;
+                }
+            }
+        }
+        // Check Voltage Sources
+        if (!foundComponent) {
+            for (auto& comp : c->voltageSources) {
+                if (comp.name == nameStr) {
+                    foundComponent = &comp;
+                    break;
+                }
+            }
+        }
+        // Check AC Voltage Sources
+        if (!foundComponent) {
+            for (auto& comp : c->acVoltageSources) {
+                if (comp.name == nameStr) {
+                    foundComponent = &comp;
+                    break;
+                }
+            }
+        }
+
+        if (foundComponent) {
+            int count = 0;
+            for (const auto& point : foundComponent->current_history) {
+                if (count >= maxCount) break;
+                timePoints[count] = point.first;
+                currents[count] = point.second;
+                count++;
+            }
+            return count;
+        }
+        // --- END MODIFIED CODE ---
+
+        return 0; // Component not found
+    } catch (...) {
+        return 0;
     }
+}
 
     int GetAllVoltageSourceNames(void* circuit, char* vsNamesBuffer, int bufferSize) {
         if (!circuit || !vsNamesBuffer || bufferSize <= 0) return 0;
